@@ -49,15 +49,21 @@ merged_df = sharpe_array = df_dummy_sum = df_dummy_sum =this_month_weight = pd.D
 def monte_carlo(Y):
     log_return  = np.log(Y/Y.shift(1))
     sample      = Y.shape[0]
-    num_ports   = number_of_iter * Scalar 
+    num_ports   = 501 #number_of_iter * Scalar 
     all_weights = np.zeros((num_ports, len(Y.columns)))
     ret_arr     = np.zeros(num_ports)
     vol_arr     = np.zeros(num_ports)
     sharpe_arr  = np.zeros(num_ports)
+    num_assets = len(Y.columns)
+    all_weights = np.zeros((num_ports, num_assets))
+    df = 10
+
     for ind in range(num_ports): 
         # weights 
-        weights = np.random.dirichlet(np.ones(len(Y.columns)), size=1)
-        weights[weights < 0.1] = 0
+        #weights = np.random.dirichlet(np.ones(len(Y.columns)), size=1)
+        weights = np.random.standard_t(df, size=num_assets)
+        weights[weights < 0.05] = 0
+        
 
         weights = np.squeeze(weights)
 
@@ -139,21 +145,20 @@ def backtest(rng_start, ret, ret_pct, trend_df):
                 print(f"Last month {i}")
                 Y = ret[prev_i:prev_b]
                 w, sharpe_ratio, vol_arr,ret_arr,sharpe_arr = monte_carlo(Y_adjusted) #Long
-
             else:
                 Y = ret[i:b]
                 Y_adjusted = asset_trimmer(b, trend_df, Y)
                 if not Y_adjusted.empty:
                     w, sharpe_ratio, vol_arr,ret_arr,sharpe_arr = monte_carlo(Y_adjusted) #Long
                     next_i,next_b = next_month(i)
-                    weight_concat = weightings(w, Y_adjusted, next_i, weight_concat, sharpe_array_concat, sharpe_ratio)
+                    weight_concat, w_df = weightings(w, Y_adjusted, next_i, weight_concat, sharpe_array_concat, sharpe_ratio)
                     y_next = ret_pct[next_i:next_b]
                     Y_adjusted_next_L = asset_trimmer(b, trend_df, y_next) #Long
-                    portfolio_return = portfolio_returns(w, Y_adjusted_next_L) #Long
+                    portfolio_return = portfolio_returns(w_df, Y_adjusted_next_L, i, w) #Long
                     vol_arr = forfrontier(vol_arr, i)
                     ret_arr = forfrontier(ret_arr, i)
                     sharpe_arr = forfrontier(sharpe_arr, i)
-                        
+
                 vol_arr_concat = pd.concat([vol_arr, vol_arr_concat], axis=0)
                 ret_arr_concat = pd.concat([ret_arr, ret_arr_concat], axis=0)
                 sharpe_arr_concat = pd.concat([sharpe_arr, sharpe_arr_concat], axis=0)
@@ -173,8 +178,12 @@ def asset_trimmer(b, trend_df, Y):
 # Function to manage weights.
 
 def weightings(w, Y_adjusted, i, weight_concat, sharpe_array_concat, sharpe_ratio):
-    w_df = pd.DataFrame(w).T
+    w_df = pd.DataFrame(w)#.T
+    w_df = w_df.T
     w_df.columns = Y_adjusted.columns
+    if np.all(np.isnan(w)):
+        w_df['VTI']    =   0.6
+        w_df['BIL']    =   0.4
     w_df['date'] = w_df.index
     w_df['date'] = i
     w_df.set_index('date', inplace=True)
@@ -182,11 +191,19 @@ def weightings(w, Y_adjusted, i, weight_concat, sharpe_array_concat, sharpe_rati
     sharpe_array['sharpe'] = sharpe_ratio
     sharpe_array_concat = pd.concat([sharpe_array_concat, sharpe_array])
     weight_concat = pd.concat([weight_concat,w_df]).fillna(0)
-    return weight_concat
+    return weight_concat, w_df
 
 # Function to calculate portfolio returns
 
-def portfolio_returns(w, Y_adjusted_next):
+def portfolio_returns(w, Y_adjusted_next, i, oldw):
+    'there is a bug here, I need the column to all be there. till next time.'
+    print(len(oldw))
+    print(oldw)
+    w = w.values
+    w = np.squeeze(w)
+    w = w[:-1]
+    print(len(w))
+    print(w)
     df_daily_return = w.T*Y_adjusted_next
     df_portfolio_return = pd.DataFrame(df_daily_return.sum(axis=1), columns=['portfolio_return'])
     return df_portfolio_return
@@ -218,6 +235,7 @@ weight_concat = weight_concat.drop(index=weight_concat.index[-1])
 ############################################################
 # Spy returns & portfolio returns
 ############################################################
+portfolio_return_concat.index = pd.to_datetime(portfolio_return_concat.index)
 
 Bench_start = portfolio_return_concat.index.min()
 def bench(Bench_start, benchmark):
