@@ -197,15 +197,22 @@ def weightings(w, Y_adjusted, i, weight_concat, sharpe_array_concat, sharpe_rati
 
 def portfolio_returns(w, Y_adjusted_next, i, oldw):
     'there is a bug here, I need the column to all be there. till next time.'
-    print(len(oldw))
-    print(oldw)
-    w = w.values
-    w = np.squeeze(w)
-    w = w[:-1]
-    print(len(w))
+    w = w.drop('sharpe', axis=1)
+    w_arr = np.array(w)
+
     print(w)
-    df_daily_return = w.T*Y_adjusted_next
+    print(Y_adjusted_next)
+
+    if "VTI" in w and (w['VTI'] == 0.6).any and "VTI" not in Y_adjusted_next.columns:
+        Y_adjusted_next['VTI'] = yf.download("VTI", start=Start, end=End)['Adj Close']
+    if "BIL" in w and (w['BIL'] == 0.4).any and "BIL" not in Y_adjusted_next.columns:
+        Y_adjusted_next['BIL'] = yf.download("BIL", start=Start, end=End)['Adj Close']
+
+
+    #Y_adjusted_next = np.array(Y_adjusted_next)
+    df_daily_return = w_arr*Y_adjusted_next
     df_portfolio_return = pd.DataFrame(df_daily_return.sum(axis=1), columns=['portfolio_return'])
+    print(df_portfolio_return)
     return df_portfolio_return
 
 # Correlation matrix used in the plotly dash.
