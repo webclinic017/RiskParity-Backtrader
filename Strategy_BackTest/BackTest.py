@@ -200,19 +200,15 @@ def portfolio_returns(w, Y_adjusted_next, i, oldw):
     w = w.drop('sharpe', axis=1)
     w_arr = np.array(w)
 
-    print(w)
-    print(Y_adjusted_next)
-
     if "VTI" in w and (w['VTI'] == 0.6).any and "VTI" not in Y_adjusted_next.columns:
-        Y_adjusted_next['VTI'] = yf.download("VTI", start=Start, end=End)['Adj Close']
+        Y_adjusted_next['VTI'] = yf.download("VTI", start=Start, end=End)['Adj Close'].pct_change()
     if "BIL" in w and (w['BIL'] == 0.4).any and "BIL" not in Y_adjusted_next.columns:
-        Y_adjusted_next['BIL'] = yf.download("BIL", start=Start, end=End)['Adj Close']
+        Y_adjusted_next['BIL'] = yf.download("BIL", start=Start, end=End)['Adj Close'].pct_change()
 
 
     #Y_adjusted_next = np.array(Y_adjusted_next)
     df_daily_return = w_arr*Y_adjusted_next
     df_portfolio_return = pd.DataFrame(df_daily_return.sum(axis=1), columns=['portfolio_return'])
-    print(df_portfolio_return)
     return df_portfolio_return
 
 # Correlation matrix used in the plotly dash.
@@ -232,7 +228,7 @@ elif trend == 'sma':
     rolling_long_df = dummy_L_df
 # Data management of weights and returns.
 portfolio_return_concat, weight_concat, vol_arr, ret_arr, sharpe_arr  = backtest(rng_start, ret, ret.pct_change(), rolling_long_df)
-
+print(portfolio_return_concat)
 sharpe_array = weight_concat.copy()
 weight_concat.drop('sharpe', axis=1, inplace=True)
 
