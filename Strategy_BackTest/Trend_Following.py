@@ -5,7 +5,7 @@ import numpy as np
 from datetime import date
 import matplotlib.pyplot as plt
 Start = '2018-01-01'
-End = '2023-02-28' # date.today().strftime("%Y-%m-%d")
+End = date.today().strftime("%Y-%m-%d")
 number_of_iter = 1000
 long    = 200
 medium  = 100
