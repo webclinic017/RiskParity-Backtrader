@@ -20,21 +20,23 @@ warnings.filterwarnings("ignore")
 ls        = 1
 monte     = 1
 trend     = 'sma'
-Rf        = 0.2
+Rf        = 0.04
 benchmark = ['VTI','BND']
-Scalar    = 5
-Dist      = 'standard_t'
+Scalar    = 50
+Dist      = 'direchlit' #'standard_t'
 
+# Setup dates
 date1 = datetime.strptime(Start, "%Y-%m-%d")
 date2 = datetime.strptime(End, "%Y-%m-%d")
 diff = relativedelta(date2, date1)
-
 Start_bench = date1 + relativedelta(months=1)
-
 months_between = (diff.years)*12 + diff.months + 1
+rng_start = pd.date_range(Start, periods=months_between, freq='MS')
 
-merged_df = sharpe_array = df_dummy_sum = df_dummy_sum =this_month_weight = pd.DataFrame([])
+# Setup DFs
+merged_df = sharpe_array = df_dummy_sum = df_dummy_sum = this_month_weight = pd.DataFrame([])
 
+# Monte Carlo
 def monte_carlo(Y):
     log_return  = np.log(Y/Y.shift(1))
     sample      = Y.shape[0]
@@ -74,29 +76,9 @@ def monte_carlo(Y):
         # Sharpe Ratio 
         sharpe_arr[ind] = (ret_arr[ind] - (Rf/12))/vol_arr[ind]
     max_sh = sharpe_arr.argmax()
-    #plot_frontier(vol_arr,ret_arr,sharpe_arr)
     sharpe_ratio = (ret_arr[max_sh]- (Rf/12))/vol_arr[max_sh]
     return all_weights[max_sh,:], sharpe_ratio, vol_arr,ret_arr,sharpe_arr
 
-############################################################
-
-def plot_frontier(vol_arr,ret_arr,sharpe_arr):
-    plt.figure(figsize=(12,8))
-    plt.scatter(vol_arr,ret_arr,c=sharpe_arr,cmap='plasma')
-    plt.colorbar(label='Sharpe Ratio')
-    max_sr_ret = ret_arr[sharpe_arr.argmax()]
-    max_sr_vol = vol_arr[sharpe_arr.argmax()]
-    max_sr_sr  = sharpe_arr[sharpe_arr.argmax()]
-    # plot the dataplt.figure(figsize=(12,8))
-    plt.xlabel('Volatility')
-    plt.ylabel('Return')
-    plt.scatter(max_sr_vol, max_sr_ret, c='red', s=50, edgecolors='black')
-############################################################
-# Building a loop that estimate optimal portfolios on
-# rebalancing dates
-############################################################
-
-rng_start = pd.date_range(Start, periods=months_between, freq='MS')
 
 def next_month(i):
     i_str = i.strftime('%Y-%m')
@@ -107,10 +89,7 @@ def next_month(i):
     next_b = next_b[0]
     return next_i,next_b
 
-############################################################
 # Calculate sharpe for next month
-############################################################
-
 def next_sharpe(weights, log_return, sharpe_list):
     sample = log_return.shape[0]
     ret_arr2 = np.sum((log_return.mean()*weights)*sample)
@@ -124,10 +103,8 @@ def forfrontier(arr, i):
     arr['index'] = i
     arr.set_index('index', inplace=True)
     return arr
-############################################################
-# Backtesting
-############################################################
 
+# Backtesting
 def backtest(rng_start, ret, ret_pct, trend_df):
     print("Iterating: ", number_of_iter * Scalar)
     vol_arr = vol_arr_concat = ret_arr_concat = sharpe_arr_concat = ret_arr = sharpe_arr = y_next = portfolio_return_concat = portfolio_return = weight_concat = sharpe_array_concat = pd.DataFrame([])
@@ -196,8 +173,8 @@ def portfolio_returns(w, Y_adjusted_next, i, oldw):
 
     if "VTI" in w and (w['VTI'] == 0.6).any and "VTI" not in Y_adjusted_next.columns:
         Y_adjusted_next['VTI'] = yf.download("VTI", start=Start, end=End)['Adj Close'].pct_change()
-    if "BIL" in w and (w['BIL'] == 0.4).any and "BIL" not in Y_adjusted_next.columns:
-        Y_adjusted_next['BIL'] = yf.download("BIL", start=Start, end=End)['Adj Close'].pct_change()
+    if "BIL" in w and (w['BIL'] == 0.4).any and "BND" not in Y_adjusted_next.columns:
+        Y_adjusted_next['BIL'] = yf.download("BND", start=Start, end=End)['Adj Close'].pct_change()
 
 
     #Y_adjusted_next = np.array(Y_adjusted_next)
@@ -212,14 +189,12 @@ def correlation_matrix(sharpe_array, column):
     corr_matrix = corr_matrix[f'{column}']
     return corr_matrix
 
-############################################################
 # Calling my functions
-############################################################
-
 if   trend == 'rsi':
     rolling_long_df = rsi_df
 elif trend == 'sma':
     rolling_long_df = dummy_L_df
+
 # Data management of weights and returns.
 portfolio_return_concat, weight_concat, vol_arr, ret_arr, sharpe_arr  = backtest(rng_start, ret, ret.pct_change(), rolling_long_df)
 print(portfolio_return_concat)
@@ -229,9 +204,8 @@ weight_concat.drop('sharpe', axis=1, inplace=True)
 this_month_weight = weight_concat.iloc[-1]
 this_month_weight = pd.DataFrame([this_month_weight])
 weight_concat = weight_concat.drop(index=weight_concat.index[-1])
-############################################################
+
 # Spy returns & portfolio returns
-############################################################
 portfolio_return_concat.index = pd.to_datetime(portfolio_return_concat.index)
 
 Bench_start = portfolio_return_concat.index.min()
@@ -251,7 +225,6 @@ def bench(Bench_start, benchmark):
 
     return Bench
 
-#Bench = pd.DataFrame.set_axis('Bench_Return', axis=1)
 Bench = bench(Bench_start, benchmark)
 benchmark = 'Bench_Return'
 
@@ -337,14 +310,13 @@ def frontier_chart(vol_arr, ret_arr, sharpe_arr, selected_index):
     vol_arr = vol_arr.T
     ret_arr = ret_arr.T
     sharpe_arr = sharpe_arr.T
-    #selected_index = selected_index.strftime('%Y-%m-%d')
     trace = go.Scatter(x=vol_arr[selected_index], 
                         y=ret_arr[selected_index], 
                         mode='markers', 
                         marker=dict(color=sharpe_arr[selected_index], 
                         colorscale='Viridis', 
                         size=8),
-                        name = 'Possible Frontier')
+                        name = 'Feasable Set')
 
     layout = go.Layout(xaxis_title='Volatility',
                         yaxis_title='Returns',
