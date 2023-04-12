@@ -15,10 +15,6 @@ import plotly.graph_objs as go
 #from optimizer import optimizer_backtest
 from Trend_Following import ret, Start, End, number_of_iter, asset_classes, rsi_df, dummy_L_df #, rolling_long_df, df_Long_short
 warnings.filterwarnings("ignore")
-############################################################
-# Variables and setup
-############################################################
-
 
 #setup (1 = True):
 ls        = 1
@@ -27,6 +23,7 @@ trend     = 'sma'
 Rf        = 0.2
 benchmark = ['VTI','BND']
 Scalar    = 5
+Dist      = 'standard_t'
 
 date1 = datetime.strptime(Start, "%Y-%m-%d")
 date2 = datetime.strptime(End, "%Y-%m-%d")
@@ -36,20 +33,12 @@ Start_bench = date1 + relativedelta(months=1)
 
 months_between = (diff.years)*12 + diff.months + 1
 
-############################################################
-# Setting up empty DFs
-############################################################
-
 merged_df = sharpe_array = df_dummy_sum = df_dummy_sum =this_month_weight = pd.DataFrame([])
-
-############################################################
-# Monte carlo
-############################################################
 
 def monte_carlo(Y):
     log_return  = np.log(Y/Y.shift(1))
     sample      = Y.shape[0]
-    num_ports   = 501 #number_of_iter * Scalar 
+    num_ports   = number_of_iter * Scalar 
     all_weights = np.zeros((num_ports, len(Y.columns)))
     ret_arr     = np.zeros(num_ports)
     vol_arr     = np.zeros(num_ports)
@@ -60,10 +49,15 @@ def monte_carlo(Y):
 
     for ind in range(num_ports): 
         # weights 
-        #weights = np.random.dirichlet(np.ones(len(Y.columns)), size=1)
-        weights = np.random.standard_t(df, size=num_assets)
+        if Dist == 'standard_t':
+            weights = np.random.standard_t(df, size=num_assets)
+        else:
+            weights = np.random.dirichlet(np.ones(len(Y.columns)), size=1)
+
+        #Rules
+
         weights[weights < 0.05] = 0
-        
+        weights[weights > 0.9]  = 0
 
         weights = np.squeeze(weights)
 
@@ -325,16 +319,12 @@ def generate_weights_table(weights_df, asset_classes):
     )
     return weights_table
 
-# Create the plotly dash
-
 def portfolio_data(df, col, num_days, average_number_days):
     Net_Returns = df[f'{col}'].mean()* num_days
     Average_Returns = df[f'{col}'].mean() * average_number_days
     std = df[f'{col}'].std() * average_number_days
     Sharpe_Ratio =  np.sqrt(average_number_days) * (Average_Returns / std)
     return Net_Returns, std, Sharpe_Ratio
-
-
 
 def last_month_data(df, col):
     last_month_returns = df.resample('M').mean().iloc[-2]
@@ -348,14 +338,17 @@ def frontier_chart(vol_arr, ret_arr, sharpe_arr, selected_index):
     ret_arr = ret_arr.T
     sharpe_arr = sharpe_arr.T
     #selected_index = selected_index.strftime('%Y-%m-%d')
-    trace = go.Scatter(x=vol_arr[selected_index], y=ret_arr[selected_index], mode='markers', 
-                    marker=dict(color=sharpe_arr[selected_index], colorscale='Viridis', size=8))
+    trace = go.Scatter(x=vol_arr[selected_index], 
+                        y=ret_arr[selected_index], 
+                        mode='markers', 
+                        marker=dict(color=sharpe_arr[selected_index], 
+                        colorscale='Viridis', 
+                        size=8),
+                        name = 'Possible Frontier')
 
-        # create the layout
-    layout = go.Layout(title='Efficient Frontier',
-                    xaxis_title='Volatility',
-                    yaxis_title='Returns',
-                    coloraxis_colorbar=dict(title='Sharpe Ratio'))
+    layout = go.Layout(xaxis_title='Volatility',
+                        yaxis_title='Returns',
+                        coloraxis_colorbar=dict(title='Sharpe Ratio'))
     sharpe_max = sharpe_arr[selected_index].max()
     location = sharpe_arr[sharpe_arr == sharpe_max].stack().index#.tolist()
     ret_max = ret_arr[selected_index]
@@ -363,28 +356,23 @@ def frontier_chart(vol_arr, ret_arr, sharpe_arr, selected_index):
     location = location[0][0]
     max_ret = ret_max[location]
     max_vol = vol_max[location]
-    # plot the dataplt.figure(figsize=(12,8))
     frontier = go.Figure(data=[trace], layout=layout)
     frontier.add_trace(go.Scatter(x=[max_vol], y=[max_ret], mode = 'markers',
                          marker_symbol = 'circle',
-                         marker_size = 10))
+                         marker_size = 10, name = 'Portfolio Estimate'))
     return frontier
 
 def portfolio_returns_app(returns_df, weights_df, this_month_weight, sharpe_array, Bench, vol_arr, ret_arr, sharpe_arr):
-    # Calculate summary statistics for portfolio returns
     num_years = (returns_df.index.max() - returns_df.index.min()).days / 365
     num_days = len(returns_df)
     average_number_days = num_days/num_years
     returns = returns_df.pct_change()
     returns.dropna(inplace=True)
-    # Portfolio data:
     Portfolio_Net_Returns, Portfolio_std, Portfolio_Sharpe_Ratio = portfolio_data(returns, 'portfolio_return', num_days, average_number_days)
     last_month_sharpe_ratio = last_month_data(returns, 'portfolio_return')
-    # Bench data:
     Bench_Net_Returns, Bench_std, Bench_Sharpe_Ratio = portfolio_data(Bench.pct_change(), f'{benchmark}', num_days, average_number_days)
     last_month_sharpe_ratio_bench = last_month_data(Bench.pct_change(), f'{benchmark}')
  
-    # Create a line chart of portfolio and benchmark returns
     fig = go.Figure()
 
     returns_df = returns_df.sort_index(ascending=False)
@@ -417,7 +405,6 @@ def portfolio_returns_app(returns_df, weights_df, this_month_weight, sharpe_arra
     ]
 
     layout = go.Layout(
-        title='Sharpe ratio correlations',
         yaxis=dict(
             tickmode='array',
             tickvals=list(range(len(corr_matrix.index))),
@@ -478,21 +465,38 @@ def portfolio_returns_app(returns_df, weights_df, this_month_weight, sharpe_arra
     html.H2(children='Summary Statistics', style={'font-size': '24px'}),
     returns_table,
     #I would like the index to be the ticker, and the hover on the chart to be the full asset name, it would also be nice in the weights table.
-    html.H2(children='Correlation Matrix'),
-    dcc.Graph(id='correlation-matrix', figure={'data': data, 'layout':layout},
-            style={'width': '40vh',
-                   'height': '90vh',
-                   'font-family': 'Arial',
-                   'font-size': '12px',}
-        ),
-    html.H3([
-        dcc.Graph(id='efficient-frontier', 
-                    figure=frontier_chart(vol_arr, ret_arr, sharpe_arr, ret_arr.index[0])),
-        dcc.Dropdown(id='vol-dropdown', 
-                    options=ret_arr_list, #[0,1,2,3,4]
-                    value=0)
-            ])
-        ])
+    
+    html.Div(children=[
+        html.Div(children=[
+            html.H2(children='Sharpe Ratio Correlation Matrix'),
+            dcc.Graph(
+                id='correlation-matrix',
+                figure={'data': data, 'layout': layout},
+                style={
+                    'width': '40vh',
+                    'height': '90vh',
+                    'font-family': 'Arial',
+                    'font-size': '12px',
+                },
+            ),
+        ], style={'flex': '1'}),
+
+        html.Div(children=[
+            html.H3(children='Efficient Frontier', style={'font-size': '24px'}),
+            dcc.Dropdown(
+                id='vol-dropdown',
+                options=ret_arr_list,
+                value=ret_arr_list[0],
+                style={'width': '200px',
+                       'font-size': '12px'},
+            ),
+            dcc.Graph(
+                id='efficient-frontier',
+                figure=frontier_chart(vol_arr, ret_arr, sharpe_arr, ret_arr.index[0]),
+            ),
+        ], style={'flex': '1'}),
+    ], style={'display': 'flex'}),
+])
     @app.callback(
             Output('efficient-frontier', 'figure'),
             [Input('vol-dropdown', 'value')])
