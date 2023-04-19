@@ -8,6 +8,12 @@ from datetime import datetime
 from calendar import monthrange
 from dateutil.relativedelta import relativedelta
 import dash
+import base64
+import smtplib
+import plotly.io as pio
+from email.mime.text import MIMEText
+from email.mime.multipart import MIMEMultipart
+from email.mime.image import MIMEImage
 from dash.dependencies import Input, Output
 import dash_core_components as dcc
 import dash_html_components as html
@@ -22,7 +28,7 @@ monte     = 1
 trend     = 'sma'
 Rf        = 0.04
 benchmark = ['VTI','BND']
-Scalar    = 50
+Scalar    = 500
 Dist      = 'direchlit' #'standard_t'
 
 # Setup dates
@@ -40,7 +46,7 @@ merged_df = sharpe_array = df_dummy_sum = df_dummy_sum = this_month_weight = pd.
 def monte_carlo(Y):
     log_return  = np.log(Y/Y.shift(1))
     sample      = Y.shape[0]
-    num_ports   = number_of_iter * Scalar 
+    num_ports   = 100 # number_of_iter * Scalar 
     all_weights = np.zeros((num_ports, len(Y.columns)))
     ret_arr     = np.zeros(num_ports)
     vol_arr     = np.zeros(num_ports)
@@ -57,7 +63,6 @@ def monte_carlo(Y):
             weights = np.random.dirichlet(np.ones(len(Y.columns)), size=1)
 
         #Rules
-
         weights[weights < 0.05] = 0
         weights[weights > 0.9]  = 0
 
@@ -197,7 +202,6 @@ elif trend == 'sma':
 
 # Data management of weights and returns.
 portfolio_return_concat, weight_concat, vol_arr, ret_arr, sharpe_arr  = backtest(rng_start, ret, ret.pct_change(), rolling_long_df)
-print(portfolio_return_concat)
 sharpe_array = weight_concat.copy()
 weight_concat.drop('sharpe', axis=1, inplace=True)
 
@@ -436,7 +440,6 @@ def portfolio_returns_app(returns_df, weights_df, this_month_weight, sharpe_arra
 
     html.H2(children='Summary Statistics', style={'font-size': '24px'}),
     returns_table,
-    #I would like the index to be the ticker, and the hover on the chart to be the full asset name, it would also be nice in the weights table.
     
     html.Div(children=[
         html.Div(children=[
@@ -468,22 +471,32 @@ def portfolio_returns_app(returns_df, weights_df, this_month_weight, sharpe_arra
             ),
         ], style={'flex': '1'}),
     ], style={'display': 'flex'}),
-])
+    ])
     @app.callback(
             Output('efficient-frontier', 'figure'),
             [Input('vol-dropdown', 'value')])
     def update_graph(selected_index):
         frontier = frontier_chart(vol_arr, ret_arr, sharpe_arr, selected_index)
         return frontier
+    
+    ret_pic = go.Figure(data=app.layout['returns-chart'].figure['data'], 
+                layout=app.layout['returns-chart'].figure['layout'])
+    
+    corr_pic = go.Figure(data=app.layout['correlation-matrix'].figure['data'], 
+                layout=app.layout['correlation-matrix'].figure['layout'])
+    
+    Efficient_pic = go.Figure(data=app.layout['efficient-frontier'].figure['data'], 
+                layout=app.layout['efficient-frontier'].figure['layout'])
+
+    pio.write_image(ret_pic, 'F:\outputs\portreturn_pic.png')
+    pio.write_image(corr_pic, 'F:\outputs\corr_pic.png')
+    pio.write_image(Efficient_pic, 'F:\outputs\Efficient_pic.png')
 
     return app
 
-
-
-
-
 app = portfolio_returns_app(merged_df, weight_concat, this_month_weight, sharpe_array, Bench, vol_arr, ret_arr, sharpe_arr)
 app.run_server(debug=False)
+
 
 '''
 Next steps:
@@ -498,9 +511,7 @@ New project:
 -For each month, rate us on how well we selected assets based on the next months weightings, if the weightings are within a bounds then we are ok, if they are 
     below the previous month then take note that we were in too deep with this asset class, so next time we think of re-balancing by increasing this asset, we can essentially rate our scores.
 
-###############
 
-Do a manual back test, checking each month 1 by 1 and see if the previous month is similar on another run, so increment the months by one to check.
-    
-############### 
+Need to do thje email thing
+
     '''
