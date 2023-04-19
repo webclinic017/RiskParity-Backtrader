@@ -3,7 +3,7 @@ import yfinance as yf
 import requests
 from calendar import monthrange
 from scipy.optimize import minimize
-
+##
 def excel_download():
     holdings_url = "https://github.com/ra6it/RiskParity/blob/main/RiskParity_Holdings_Constraints.xlsx?raw=true"
     holdings_url = requests.get(holdings_url, verify=False).content
