@@ -4,7 +4,7 @@ from datamanagement import *
 import numpy as np
 from datetime import date
 import matplotlib.pyplot as plt
-Start = '2018-01-01'
+Start = '2022-01-01'
 End = date.today().strftime("%Y-%m-%d")
 number_of_iter = 1000
 long    = 200
