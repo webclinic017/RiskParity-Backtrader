@@ -1,19 +1,17 @@
 import pandas as pd
-import datetime
+import datetime, ssl
 import yfinance as yf
 import numpy as np 
 import warnings
+from sendgrid import SendGridAPIClient
+from sendgrid.helpers.mail import Mail
 import matplotlib.pyplot as plt
 from datetime import datetime
 from calendar import monthrange
 from dateutil.relativedelta import relativedelta
 import dash
-import base64
-import smtplib
+import os
 import plotly.io as pio
-from email.mime.text import MIMEText
-from email.mime.multipart import MIMEMultipart
-from email.mime.image import MIMEImage
 from dash.dependencies import Input, Output
 import dash_core_components as dcc
 import dash_html_components as html
@@ -61,10 +59,9 @@ def monte_carlo(Y):
             weights = np.random.standard_t(df, size=num_assets)
         else:
             weights = np.random.dirichlet(np.ones(len(Y.columns)), size=1)
-
         #Rules
-        weights[weights < 0.05] = 0
-        weights[weights > 0.9]  = 0
+        weights[weights < 0.1] = 0
+        weights[weights > 0.6] = 0.6
 
         weights = np.squeeze(weights)
 
@@ -488,10 +485,6 @@ def portfolio_returns_app(returns_df, weights_df, this_month_weight, sharpe_arra
     Efficient_pic = go.Figure(data=app.layout['efficient-frontier'].figure['data'], 
                 layout=app.layout['efficient-frontier'].figure['layout'])
 
-    pio.write_image(ret_pic, 'F:\outputs\portreturn_pic.png')
-    pio.write_image(corr_pic, 'F:\outputs\corr_pic.png')
-    pio.write_image(Efficient_pic, 'F:\outputs\Efficient_pic.png')
-
     return app
 
 app = portfolio_returns_app(merged_df, weight_concat, this_month_weight, sharpe_array, Bench, vol_arr, ret_arr, sharpe_arr)
@@ -510,8 +503,5 @@ Next steps:
 New project:
 -For each month, rate us on how well we selected assets based on the next months weightings, if the weightings are within a bounds then we are ok, if they are 
     below the previous month then take note that we were in too deep with this asset class, so next time we think of re-balancing by increasing this asset, we can essentially rate our scores.
-
-
-Need to do thje email thing
 
     '''
