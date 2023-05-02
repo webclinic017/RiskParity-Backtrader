@@ -20,12 +20,17 @@ Start_bench = date1 + relativedelta(months=1)
 months_between = (diff.years)*12 + diff.months + 1
 rng_start = pd.date_range(Start, periods=months_between, freq='MS')
 
+def next_month(i):
+    i_str = i.strftime('%Y-%m')
+    dt = datetime.strptime(i_str, '%Y-%m')
+    next_month = dt + relativedelta(months=1)
+    next_i = datetime(next_month.year, next_month.month, 1)
+    next_b = pd.date_range(start=next_i, periods=1, freq='M')
+    next_b = next_b[0]
+    return next_i,next_b
 
 prices, asset_classes, asset = datamanagement_1(Start, End)
 ret = data_management_2(prices, asset_classes, asset).dropna()
-'''
-I need to exclude the columns until there are 200 days worth of data, if there is not 200 days, then set to 0
-'''
 
 def calculate_rolling_average(ret, days):
     ret = ret.dropna()
@@ -50,28 +55,6 @@ def dummy_sma(rolling_df, ret):
 
     return dummy_L_df
 dummy_L_df = calculate_rolling_average(ret, 200)
-
-'''
-rolling_short_df   = calculate_rolling_average(ret, min(short, len(ret)))
-rolling_medium_df  = calculate_rolling_average(ret, min(medium, len(ret)))
-rolling_long_df    = calculate_rolling_average(ret, min(long, len(ret)))
-
-df_Long_short = pd.DataFrame([])
-
-for asset_name in rolling_long_df.columns:
-    # If P> 200ma, and P < 30ma, then 0 ,1 
-
-    df_Long_short[asset_name] = ((rolling_short_df[asset_name] ==1) & (rolling_long_df[asset_name]==1)).astype(int)
-
-df_Long_short  = df_Long_short.resample('M').mean()
-'''
-'''
-Do I need a shorter  timeframe?
-So if the long term trend is up, and say short term trend is down, then the market has pivoted and we don't want to invest in that asset.
-Is a rally too good to be true?
-Like look at XOP June 2022, is that really worth it? Or, UNG Dec 2018, I need to differentiate between a rally and a spike hmm
-
-'''
 
 def calculate_monthly_rsi(df):
     # Calculate monthly RSI for each column (i.e., asset)
@@ -99,17 +82,8 @@ def calculate_monthly_rsi(df):
     # Combine RSI DataFrames for all assets into one DataFrame
     return rsi_df
 
-
-
 rsi_df = calculate_monthly_rsi(ret)
 # Now, if the row for a specific contract is <0, then we can exclude it from our sample set, and it is not needed. This is part of the asset selection component.
 n = 5
 count = rsi_df.groupby(pd.Grouper(freq='M')).apply(lambda x: (x > 70).sum())
 new_cool_df = count.where(count <= n, 1).where(count > n, 0).resample('M').last()
-
-'''
-For the RSI, is there some kind of curve to tell me that in nov we shoul
-
-Here, I am going to calculate the derivative of the dummy_long_dfs to see if we can track trends well there.
-Is it the derivative of my dummy df, or my trend df?
-'''
