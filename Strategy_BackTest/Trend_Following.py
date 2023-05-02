@@ -20,6 +20,12 @@ Start_bench = date1 + relativedelta(months=1)
 months_between = (diff.years)*12 + diff.months + 1
 rng_start = pd.date_range(Start, periods=months_between, freq='MS')
 
+def asset_trimmer(b, trend_df, Y):
+    df_split_monthly = trend_df[b:b]
+    cols_to_drop = [col for col in df_split_monthly.columns if df_split_monthly[col].max() < 0.8]
+    Y = Y.drop(columns=cols_to_drop)
+    return Y
+
 def next_month(i):
     i_str = i.strftime('%Y-%m')
     dt = datetime.strptime(i_str, '%Y-%m')
