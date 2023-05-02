@@ -9,6 +9,7 @@ import matplotlib.pyplot as plt
 from datetime import datetime
 from calendar import monthrange
 from dateutil.relativedelta import relativedelta
+from scipy.optimize import minimize, Bounds, LinearConstraint
 import dash
 import os
 import plotly.io as pio
@@ -493,6 +494,10 @@ app.run_server(debug=False)
 
 '''
 Next steps:
+
+-Actually get the optimization working, the montecarlo clearly isn't right
+
+
 -More assets enabled.
 -More asset selection culling.
 -Incorporate the capm model for each assets expected returns.
