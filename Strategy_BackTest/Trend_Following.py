@@ -1,8 +1,10 @@
 #Start with a MA.
 import pandas as pd
+import datetime, ssl
 from datamanagement import *
 import numpy as np
 from datetime import date
+from dateutil.relativedelta import relativedelta
 import matplotlib.pyplot as plt
 Start = '2022-01-01'
 End = date.today().strftime("%Y-%m-%d")
@@ -10,6 +12,15 @@ number_of_iter = 1000
 long    = 200
 medium  = 100
 short   = 30
+
+
+date1 = datetime.strptime(Start, "%Y-%m-%d")
+date2 = datetime.strptime(End, "%Y-%m-%d")
+diff = relativedelta(date2, date1)
+Start_bench = date1 + relativedelta(months=1)
+months_between = (diff.years)*12 + diff.months + 1
+rng_start = pd.date_range(Start, periods=months_between, freq='MS')
+
 
 prices, asset_classes, asset = datamanagement_1(Start, End)
 ret = data_management_2(prices, asset_classes, asset).dropna()

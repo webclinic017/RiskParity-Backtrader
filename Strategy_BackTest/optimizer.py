@@ -1,8 +1,8 @@
 import numpy as np
 import pandas as pd
-from BackTest import months_between, portfolio_returns, asset_trimmer, next_month
 from scipy.optimize import minimize
-from Trend_Following import Start, End, ret, dummy_L_df
+from scipy.optimize import minimize, Bounds, LinearConstraint
+from Trend_Following import Start, End, ret, dummy_L_df, months_between
 counter = 4
 
 rng_start = pd.date_range(Start, periods=months_between, freq='MS')
