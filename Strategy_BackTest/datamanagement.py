@@ -6,39 +6,30 @@ from scipy.optimize import minimize
 from Utils import Start, End
 ##
 
-def data_management(start, end):
+def data_management(start, end, int):
     holdings_url = "https://github.com/ra6it/RiskParity/blob/main/RiskParity_Holdings_Constraints.xlsx?raw=true"
-    assets = pd.read_excel(holdings_url, 'Holdings', usecols="A:B", engine='openpyxl')
-    assets = assets.dropna(subset=['Asset'])
-    assets = assets.rename(columns={'Asset': 'Ticker'})
-    
-    asset_classes = assets.sort_values(by='Ticker')[['Ticker', 'Industry', 'Full_name']]
-    asset_classes.reset_index(drop=True, inplace=True)
-    
-    asset_list = asset_classes['Ticker'].tolist()
+    holdings_url = requests.get(holdings_url, verify=False).content
+    assets = pd.read_excel(holdings_url,'Holdings',usecols="A:B", engine='openpyxl')
+    assets = assets.reindex(columns=['Asset', 'Industry', 'Full_name'])
+    asset_classes = {'Asset': assets['Asset'].values.tolist(), 
+                     'Industry': assets['Industry'].values.tolist(),
+                     'Full_name': assets['Full_name'].values.tolist(),
+                     }
+    asset_classes = pd.DataFrame(asset_classes)
+    asset_classes = asset_classes.sort_values(by=['Asset'])
+    asset = assets['Asset'].values.tolist()
+    asset = [x for x in asset if str(x) != 'nan']
+
     df_list = []
-    
-    for asset in asset_list:
-        asset_data = yf.download(asset, start=start, end=end, interval="1mo")['Adj Close']
-        df_list.append(pd.DataFrame(asset_data))
-    
+    asset = list(set(asset))
+    for i in asset:
+        asset_2 = yf.download(i, start=start, end=end, interval=int)['Adj Close']
+        df_list.append(pd.DataFrame(asset_2))
     prices = pd.concat(df_list, axis=1)
-    prices.columns = asset_list
-    
-    valid_assets = asset_classes['Ticker'].isin(asset_list)
-    asset_classes = asset_classes[valid_assets]
-    asset_classes.reset_index(drop=True, inplace=True)
-    
+    prices.columns = asset
     returns = prices
-    
-    return prices, asset_classes, returns
-
-prices, asset_classes, returns = data_management(Start, End)
-
-# Print the results
-print("Prices:")
-print(prices)
-print("\nAsset Classes:")
-print(asset_classes)
-print("\nReturns:")
-print(returns)
+    valid_assets = asset_classes['Asset'].isin(asset)
+    asset_classes = asset_classes[valid_assets]
+    asset_classes = pd.DataFrame(asset_classes)
+    asset_classes = asset_classes.sort_values(by=['Asset'])
+    return returns, asset_classes, asset
