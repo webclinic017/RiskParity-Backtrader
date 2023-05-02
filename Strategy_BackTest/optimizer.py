@@ -2,7 +2,8 @@ import numpy as np
 import pandas as pd
 from scipy.optimize import minimize
 from scipy.optimize import minimize, Bounds, LinearConstraint
-from Trend_Following import Start, End, ret, dummy_L_df, months_between
+from Trend_Following import Start, End, ret, dummy_L_df, months_between, next_month
+
 counter = 4
 
 rng_start = pd.date_range(Start, periods=months_between, freq='MS')

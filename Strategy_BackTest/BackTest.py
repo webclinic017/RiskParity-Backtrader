@@ -18,7 +18,7 @@ import dash_core_components as dcc
 import dash_html_components as html
 import plotly.graph_objs as go
 #from optimizer import optimizer_backtest
-from Trend_Following import ret, Start, End, number_of_iter, asset_classes, rsi_df, dummy_L_df, months_between #, rolling_long_df, df_Long_short
+from Trend_Following import * # ret, Start, End, number_of_iter, asset_classes, rsi_df, dummy_L_df, months_between, next_month #, rolling_long_df, df_Long_short
 warnings.filterwarnings("ignore")
 
 #setup (1 = True):
@@ -76,16 +76,6 @@ def monte_carlo(Y):
     max_sh = sharpe_arr.argmax()
     sharpe_ratio = (ret_arr[max_sh]- (Rf/12))/vol_arr[max_sh]
     return all_weights[max_sh,:], sharpe_ratio, vol_arr,ret_arr,sharpe_arr
-
-
-def next_month(i):
-    i_str = i.strftime('%Y-%m')
-    dt = datetime.strptime(i_str, '%Y-%m')
-    next_month = dt + relativedelta(months=1)
-    next_i = datetime(next_month.year, next_month.month, 1)
-    next_b = pd.date_range(start=next_i, periods=1, freq='M')
-    next_b = next_b[0]
-    return next_i,next_b
 
 # Calculate sharpe for next month
 def next_sharpe(weights, log_return, sharpe_list):
