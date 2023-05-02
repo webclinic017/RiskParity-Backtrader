@@ -18,7 +18,7 @@ import dash_core_components as dcc
 import dash_html_components as html
 import plotly.graph_objs as go
 #from optimizer import optimizer_backtest
-from Trend_Following import ret, Start, End, number_of_iter, asset_classes, rsi_df, dummy_L_df #, rolling_long_df, df_Long_short
+from Trend_Following import ret, Start, End, number_of_iter, asset_classes, rsi_df, dummy_L_df, months_between #, rolling_long_df, df_Long_short
 warnings.filterwarnings("ignore")
 
 #setup (1 = True):
@@ -31,12 +31,7 @@ Scalar    = 500
 Dist      = 'direchlit' #'standard_t'
 
 # Setup dates
-date1 = datetime.strptime(Start, "%Y-%m-%d")
-date2 = datetime.strptime(End, "%Y-%m-%d")
-diff = relativedelta(date2, date1)
-Start_bench = date1 + relativedelta(months=1)
-months_between = (diff.years)*12 + diff.months + 1
-rng_start = pd.date_range(Start, periods=months_between, freq='MS')
+
 
 # Setup DFs
 merged_df = sharpe_array = df_dummy_sum = df_dummy_sum = this_month_weight = pd.DataFrame([])
