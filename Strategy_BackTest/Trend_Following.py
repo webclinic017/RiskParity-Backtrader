@@ -13,7 +13,7 @@ long    = 200
 medium  = 100
 short   = 30
 
-returns, asset_classes, asset = data_management(Start, End)
+ret, asset_classes, asset = data_management(Start, End, '1d')
 
 def calculate_rolling_average(ret, days):
     ret = ret.dropna()
