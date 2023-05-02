@@ -1,6 +1,6 @@
 #Start with a MA.
 import pandas as pd
-import datetime, ssl
+from datetime import datetime
 from datamanagement import *
 import numpy as np
 from datetime import date
@@ -12,7 +12,6 @@ number_of_iter = 1000
 long    = 200
 medium  = 100
 short   = 30
-
 
 date1 = datetime.strptime(Start, "%Y-%m-%d")
 date2 = datetime.strptime(End, "%Y-%m-%d")
