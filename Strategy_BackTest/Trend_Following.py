@@ -35,6 +35,22 @@ def next_month(i):
     next_b = next_b[0]
     return next_i,next_b
 
+def portfolio_returns(w, Y_adjusted_next, i, oldw):
+    'there is a bug here, I need the column to all be there. till next time.'
+    w = w.drop('sharpe', axis=1)
+    w_arr = np.array(w)
+
+    if "VTI" in w and (w['VTI'] == 0.6).any and "VTI" not in Y_adjusted_next.columns:
+        Y_adjusted_next['VTI'] = yf.download("VTI", start=Start, end=End)['Adj Close'].pct_change()
+    if "BIL" in w and (w['BIL'] == 0.4).any and "BND" not in Y_adjusted_next.columns:
+        Y_adjusted_next['BIL'] = yf.download("BND", start=Start, end=End)['Adj Close'].pct_change()
+
+
+    #Y_adjusted_next = np.array(Y_adjusted_next)
+    df_daily_return = w_arr*Y_adjusted_next
+    df_portfolio_return = pd.DataFrame(df_daily_return.sum(axis=1), columns=['portfolio_return'])
+    return df_portfolio_return
+
 prices, asset_classes, asset = datamanagement_1(Start, End)
 ret = data_management_2(prices, asset_classes, asset).dropna()
 
