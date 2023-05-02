@@ -127,13 +127,6 @@ def backtest(rng_start, ret, ret_pct, trend_df):
     portfolio_return_concat = pd.DataFrame(portfolio_return_concat)
     return portfolio_return_concat, weight_concat, vol_arr_concat,ret_arr_concat,sharpe_arr_concat
 
-# Function to drop if the asset is not trending.
-def asset_trimmer(b, trend_df, Y):
-    df_split_monthly = trend_df[b:b]
-    cols_to_drop = [col for col in df_split_monthly.columns if df_split_monthly[col].max() < 0.8]
-    Y = Y.drop(columns=cols_to_drop)
-    return Y
-
 # Function to manage weights.
 
 def weightings(w, Y_adjusted, i, weight_concat, sharpe_array_concat, sharpe_ratio):

@@ -2,7 +2,7 @@ import numpy as np
 import pandas as pd
 from scipy.optimize import minimize
 from scipy.optimize import minimize, Bounds, LinearConstraint
-from Trend_Following import Start, End, ret, dummy_L_df, months_between, next_month
+from Trend_Following import * #Start, End, ret, dummy_L_df, months_between, next_month
 
 counter = 4
 
