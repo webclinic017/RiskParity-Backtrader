@@ -50,9 +50,12 @@ def optimizerbacktest(Y_adjusted, trend_df):
 
             x = optimize(ret_risk, W, exp_ret, cov, target_return=0.055)
             w = x['x']
-            weight_concat, w_df = weightings(w, Y_adjusted, row_number+1, weight_concat, sharpe_array_concat, 1)
+            weight_concat, w_df = weightings(w, Y_adjusted, index, weight_concat, sharpe_array_concat, 1)
             month_returns_log = pd.DataFrame(month_returns_log)
             Y_adjusted_next_L = pd.DataFrame(asset_trimmer(row_number, trend_df, next_month_returns)) #Long
+
+            ######### this needs to use daily data, I need a daily df
+
             portfolio_return = portfolio_returns(w_df, Y_adjusted_next_L.T, index, w) #Long
             print(portfolio_return)
         portfolio_return_concat = pd.concat([portfolio_return_concat, portfolio_return], axis=0) #Long

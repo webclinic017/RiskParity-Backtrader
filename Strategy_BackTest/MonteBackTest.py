@@ -134,6 +134,8 @@ def backtest(rng_start, ret, ret_pct, trend_df):
                 vol_arr_concat, ret_arr_concat, sharpe_arr_concat, prev_i, prev_b = concat(vol_arr, vol_arr_concat, ret_arr, ret_arr_concat, sharpe_arr, sharpe_arr_concat, i, b)
                 portfolio_return_concat = pd.concat([portfolio_return_concat, portfolio_return], axis=0) #Long
     portfolio_return_concat = pd.DataFrame(portfolio_return_concat)
+    portfolio_return_concat.index = pd.to_datetime(portfolio_return_concat.index)
+
     return portfolio_return_concat, weight_concat, vol_arr_concat,ret_arr_concat,sharpe_arr_concat
 
 # Calling my functions
@@ -143,18 +145,10 @@ elif trend == 'sma':
     rolling_long_df = dummy_L_df
 
 # Data management of weights and returns.
-portfolio_return_concat, weight_concat, vol_arr, ret_arr, sharpe_arr  = backtest(rng_start, ret, ret.pct_change(), rolling_long_df)
-sharpe_array = weight_concat.copy()
-weight_concat.drop('sharpe', axis=1, inplace=True)
 
-this_month_weight = weight_concat.iloc[-1]
-this_month_weight = pd.DataFrame([this_month_weight])
-weight_concat = weight_concat.drop(index=weight_concat.index[-1])
 
 # Spy returns & portfolio returns
-portfolio_return_concat.index = pd.to_datetime(portfolio_return_concat.index)
 
-Bench_start = portfolio_return_concat.index.min()
 def bench(Bench_start, benchmark):
     Bench_W = Bench = pd.DataFrame([])
     for i in benchmark:
@@ -168,16 +162,17 @@ def bench(Bench_start, benchmark):
     Bench = (1 + Bench).cumprod() * 10000
     Bench = pd.DataFrame(Bench)
     Bench.columns = ['Bench_Return']
-
+    
     return Bench
 
-Bench = bench(Bench_start, benchmark)
+Bench = bench(portfolio_return_concat.index.min(), benchmark)
 benchmark = 'Bench_Return'
 
 merged_df = portfolio_return_concat
 merged_df.iloc[0] = 0
 merged_df = (1 + merged_df).cumprod() * 10000
 
+portfolio_return_concat, weight_concat, vol_arr, ret_arr, sharpe_arr  = backtest(rng_start, ret, ret.pct_change(), rolling_long_df)
 
 '''
 Next steps:
