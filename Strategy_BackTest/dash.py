@@ -1,11 +1,6 @@
-import pandas as pd
 import numpy as np 
 import warnings
 from calendar import monthrange
-import plotly.io as pio
-from dash.dependencies import Input, Output
-import dash_core_components as dcc
-import dash_html_components as html
 import plotly.graph_objs as go
 from Utils import *
 from Trend_Following import *
@@ -244,39 +239,9 @@ def portfolio_returns_app(returns_df, weights_df, this_month_weight, sharpe_arra
                     'font-size': '12px',
                 },
             ),
-        ], style={'flex': '1'}),
-
-        html.Div(children=[
-            html.H3(children='Efficient Frontier', style={'font-size': '24px'}),
-            dcc.Dropdown(
-                id='vol-dropdown',
-                options=ret_arr_list,
-                value=ret_arr_list[0],
-                style={'width': '200px',
-                       'font-size': '12px'},
-            ),
-            dcc.Graph(
-                id='efficient-frontier',
-                figure=frontier_chart(vol_arr, ret_arr, sharpe_arr, ret_arr.index[0]),
-            ),
-        ], style={'flex': '1'}),
-    ], style={'display': 'flex'}),
+        ], style={'flex': '1'})
     ])
-    @app.callback(
-            Output('efficient-frontier', 'figure'),
-            [Input('vol-dropdown', 'value')])
-    def update_graph(selected_index):
-        frontier = frontier_chart(vol_arr, ret_arr, sharpe_arr, selected_index)
-        return frontier
-    
-    ret_pic = go.Figure(data=app.layout['returns-chart'].figure['data'], 
-                layout=app.layout['returns-chart'].figure['layout'])
-    
-    corr_pic = go.Figure(data=app.layout['correlation-matrix'].figure['data'], 
-                layout=app.layout['correlation-matrix'].figure['layout'])
-    
-    Efficient_pic = go.Figure(data=app.layout['efficient-frontier'].figure['data'], 
-                layout=app.layout['efficient-frontier'].figure['layout'])
+        ])
 
     return app
 

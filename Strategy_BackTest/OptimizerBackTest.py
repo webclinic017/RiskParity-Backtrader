@@ -7,8 +7,6 @@ from datamanagement import *
 from Trend_Following import dummy_L_df
 #from Trend_Following import * #Start, End, ret, dummy_L_df, months_between, next_month
 
-vol_arr, ret_arr, sharpe_arr = pd.DataFrame()
-
 monthly_returns, asset_classes, asset = data_management(Start, End, '1mo')
 
 monthly_returns = monthly_returns.dropna()

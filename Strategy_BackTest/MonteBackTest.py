@@ -10,10 +10,10 @@ from datetime import datetime
 from calendar import monthrange
 from dateutil.relativedelta import relativedelta
 from scipy.optimize import minimize, Bounds, LinearConstraint
-import Strategy_BackTest.dash as dash
+from dash import Input, Output
 import os
 import plotly.io as pio
-from dash.dependencies import Input, Output
+from dash import Input, Output
 import dash_core_components as dcc
 import dash_html_components as html
 import plotly.graph_objs as go
