@@ -21,7 +21,7 @@ def optimize(func, W, exp_ret, cov, target_return):
                                method='SLSQP',
                                bounds=opt_bounds,
                                constraints=opt_constraints,
-                               options={'maxiter': 100000000, 'ftol': 1e-3, 'xtol': 1e-3, 'gtol': 1e-3})
+                               options={'maxiter': 100000000, 'ftol': 1e-3})
     print(optimal_weights['message'])
     return optimal_weights
 
@@ -33,24 +33,34 @@ monthly_returns_log = monthly_returns_log.dropna()
 monthly_returns_log.index = pd.to_datetime(monthly_returns_log.index).strftime('%Y-%m-%d')
 
 def optimizerbacktest(Y_adjusted, trend_df):
+    weight_concat = sharpe_array_concat = portfolio_return_concat = pd.DataFrame()
+    stopper = len(monthly_returns_log)
     for row_number, (index, row) in enumerate(monthly_returns_log.iterrows(), 1):
-        Y_adjusted = asset_trimmer(index, trend_df, monthly_returns_log)
+        print(row_number, stopper)
+        if row_number != stopper:
+            Y_adjusted = asset_trimmer(index, trend_df, monthly_returns_log)
 
-        month_returns_log = cov = pd.DataFrame()
-        month_returns_log = monthly_returns_log.iloc[row_number-1]
+            month_returns_log = cov = pd.DataFrame()
+            month_returns_log = monthly_returns_log.iloc[row_number-1]
+            next_month_returns = monthly_returns_log.iloc[row_number]
+            cov = month_returns_log.T.cov(other=month_returns_log)
 
-        cov = month_returns_log.T.cov(other=month_returns_log)
+            exp_ret = month_returns_log.values
+            W = np.ones((7,1))
 
-        exp_ret = month_returns_log.values
-        W = np.ones((7,1))
+            x = optimize(ret_risk, W, exp_ret, cov, target_return=0.055)
+            w = x['x']
+            weight_concat, w_df = weightings(w, Y_adjusted, row_number+1, weight_concat, sharpe_array_concat, 1)
+            month_returns_log = pd.DataFrame(month_returns_log)
+            Y_adjusted_next_L = pd.DataFrame(asset_trimmer(row_number, trend_df, next_month_returns)) #Long
+            portfolio_return = portfolio_returns(w_df, Y_adjusted_next_L.T, index, w) #Long
+            print(portfolio_return)
+        portfolio_return_concat = pd.concat([portfolio_return_concat, portfolio_return], axis=0) #Long
+    return portfolio_return_concat, weight_concat
 
-        x = optimize(ret_risk, W, exp_ret, cov, target_return=0.055)
-        w = x['x']
-        weight_concat, w_df = weightings(w, Y_adjusted, next_i, weight_concat, sharpe_array_concat, sharpe_ratio)
-
-
-optimizerbacktest(monthly_returns_log, dummy_L_df)
-
+portfolio_return_concat, weight_concat = optimizerbacktest(monthly_returns_log, dummy_L_df)
+print(weight_concat)
+print(portfolio_return_concat)
 '''
 Here will be the optimization,
 
