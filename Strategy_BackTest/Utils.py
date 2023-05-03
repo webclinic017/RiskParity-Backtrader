@@ -16,6 +16,7 @@ months_between = (diff.years)*12 + diff.months + 1
 rng_start = pd.date_range(Start, periods=months_between, freq='MS')
 
 def asset_trimmer(b, df_split_monthly, Y):
+    print(df_split_monthly)
     cols_to_drop = [col for col in df_split_monthly.columns if df_split_monthly[col].max() < 0.8]
     Y = Y.drop(columns=cols_to_drop)
     return Y

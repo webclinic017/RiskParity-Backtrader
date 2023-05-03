@@ -56,9 +56,9 @@ def optimizerbacktest(Y_adjusted, trend_df, daily_returns_log):
         current_month_returns = daily_returns_log[daily_returns_log.index.month == current_month]
         next_month_returns = daily_returns_log[daily_returns_log.index.month == next_month]
         if row_number != stopper:
-            trend_df = trend_df.iloc[row_number]
-
-            Y_adjusted = asset_trimmer(row_number, trend_df, current_month_returns)
+            trend_df = pd.DataFrame(trend_df.iloc[row_number])
+            print(trend_df.T)
+            Y_adjusted = asset_trimmer(row_number, trend_df.T, current_month_returns)
             if not Y_adjusted.empty:
                 month_returns_log   = current_month_returns.iloc[row_number]
                 cov                 = month_returns_log.T.cov(other=month_returns_log)
