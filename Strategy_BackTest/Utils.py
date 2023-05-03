@@ -34,7 +34,7 @@ def portfolio_returns(w, Y_adjusted_next, i, oldw):
     'there is a bug here, I need the column to all be there. till next time.'
     w = w.drop('sharpe', axis=1)
     w_arr = np.array(w)
-
+    
     if "VTI" in w and (w['VTI'] == 0.6).any and "VTI" not in Y_adjusted_next.columns:
         Y_adjusted_next['VTI'] = yf.download("VTI", start=Start, end=End)['Adj Close'].pct_change()
     if "BIL" in w and (w['BIL'] == 0.4).any and "BND" not in Y_adjusted_next.columns:

@@ -125,7 +125,7 @@ def frontier_chart(vol_arr, ret_arr, sharpe_arr, selected_index):
                          marker_size = 10, name = 'Portfolio Estimate'))
     return frontier
 
-def portfolio_returns_app(returns_df, weights_df, this_month_weight, Bench, ret_arr, sharpe_array):
+def portfolio_returns_app(returns_df, weights_df, this_month_weight, Bench, sharpe_array):
     num_years = (returns_df.index.max() - returns_df.index.min()).days / 365
     num_days = len(returns_df)
     average_number_days = num_days/num_years
