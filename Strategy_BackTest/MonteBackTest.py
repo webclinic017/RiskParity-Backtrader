@@ -1,22 +1,7 @@
 import pandas as pd
-import datetime, ssl
-import yfinance as yf
 import numpy as np 
 import warnings
-from sendgrid import SendGridAPIClient
-from sendgrid.helpers.mail import Mail
-import matplotlib.pyplot as plt
-from datetime import datetime
-from calendar import monthrange
-from dateutil.relativedelta import relativedelta
-from scipy.optimize import minimize, Bounds, LinearConstraint
-from dash import Input, Output
-import os
-import plotly.io as pio
-from dash import Input, Output
-import dash_core_components as dcc
 import dash_html_components as html
-import plotly.graph_objs as go
 from Utils import *
 from Trend_Following import *
 warnings.filterwarnings("ignore")

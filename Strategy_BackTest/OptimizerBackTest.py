@@ -57,13 +57,11 @@ def optimizerbacktest(Y_adjusted, trend_df):
             ######### this needs to use daily data, I need a daily df
 
             portfolio_return = portfolio_returns(w_df, Y_adjusted_next_L.T, index, w) #Long
-            print(portfolio_return)
         portfolio_return_concat = pd.concat([portfolio_return_concat, portfolio_return], axis=0) #Long
-    return portfolio_return_concat, weight_concat
+    return portfolio_return_concat, weight_concat, sharpe_array_concat
 
-portfolio_return_concat, weight_concat = optimizerbacktest(monthly_returns_log, dummy_L_df)
-print(weight_concat)
-print(portfolio_return_concat)
+portfolio_return_concat, weight_concat, sharpe_array_concat = optimizerbacktest(monthly_returns_log, dummy_L_df)
+
 '''
 Here will be the optimization,
 
