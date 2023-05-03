@@ -6,9 +6,8 @@ from Utils import *
 from Trend_Following import *
 from OptimizerBackTest import *
 import numpy as np
-from Utils import bench, this_month_weight, sharpe_array
-from OptimizerBackTest import portfolio_return_concat, portfolio_return_concat, weight_concat, vol_arr, ret_arr, sharpe_arr
-from datamanagement import asset_classes
+from Utils import bench
+from OptimizerBackTest import portfolio_return_concat, portfolio_return_concat, weight_concat, asset_classes, sharpe_array_concat
 
 warnings.filterwarnings("ignore")
 
@@ -16,10 +15,13 @@ benchmark = 'Bench_Return'
 
 Bench, merged_df = bench(portfolio_return_concat.index.min(), benchmark, portfolio_return_concat)
 
+weight_concat, this_month_weight = output_mgmt(weight_concat)
+
 def correlation_matrix(sharpe_array, column):
     corr_matrix = sharpe_array.corr()
     corr_matrix = corr_matrix[f'{column}']
     return corr_matrix
+
 def long_names(asset_classes, weight):
     mapping_dict = dict(zip(asset_classes['Asset'], asset_classes['Full_name']))
     weight_long = weight.rename(columns=mapping_dict)
@@ -123,7 +125,7 @@ def frontier_chart(vol_arr, ret_arr, sharpe_arr, selected_index):
                          marker_size = 10, name = 'Portfolio Estimate'))
     return frontier
 
-def portfolio_returns_app(returns_df, weights_df, this_month_weight, sharpe_array, Bench, vol_arr, ret_arr, sharpe_arr):
+def portfolio_returns_app(returns_df, weights_df, this_month_weight, Bench, ret_arr, sharpe_array):
     num_years = (returns_df.index.max() - returns_df.index.min()).days / 365
     num_days = len(returns_df)
     average_number_days = num_days/num_years
@@ -240,10 +242,38 @@ def portfolio_returns_app(returns_df, weights_df, this_month_weight, sharpe_arra
                 },
             ),
         ], style={'flex': '1'})
+                
     ])
         ])
 
     return app
 
-app = portfolio_returns_app(merged_df, weight_concat, this_month_weight, sharpe_array, Bench, vol_arr, ret_arr, sharpe_arr)
+app = portfolio_returns_app(merged_df, weight_concat, this_month_weight, Bench, sharpe_array_concat)
 app.run_server(debug=False)
+
+
+'''
+    html.Div(children=[
+            html.H3(children='Efficient Frontier', style={'font-size': '24px'}),
+            dcc.Dropdown(
+                id='vol-dropdown',
+                options=ret_arr_list,
+                value=ret_arr_list[0],
+                style={'width': '200px',
+                       'font-size': '12px'},
+            ),
+            dcc.Graph(
+                id='efficient-frontier',
+                figure=frontier_chart(vol_arr, ret_arr, sharpe_arr, ret_arr.index[0]),
+            ),
+        ], style={'flex': '1'}),
+    ], style={'display': 'flex'}),
+    ])
+    @app.callback(
+            Output('efficient-frontier', 'figure'),
+            [Input('vol-dropdown', 'value')])
+    def update_graph(selected_index):
+        frontier = frontier_chart(vol_arr, ret_arr, sharpe_arr, selected_index)
+        return frontier
+    '''
+

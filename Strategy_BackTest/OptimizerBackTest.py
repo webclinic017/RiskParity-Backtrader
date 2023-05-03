@@ -50,7 +50,7 @@ def optimizerbacktest(Y_adjusted, trend_df):
 
             x = optimize(ret_risk, W, exp_ret, cov, target_return=0.055)
             w = x['x']
-            weight_concat, w_df = weightings(w, Y_adjusted, index, weight_concat, sharpe_array_concat, 1)
+            weight_concat, w_df, sharpe_array_concat = weightings(w, Y_adjusted, index, weight_concat, sharpe_array_concat, 1)
             month_returns_log = pd.DataFrame(month_returns_log)
             Y_adjusted_next_L = pd.DataFrame(asset_trimmer(row_number, trend_df, next_month_returns)) #Long
 
