@@ -60,3 +60,12 @@ def weightings(w, Y_adjusted, i, weight_concat, sharpe_array_concat, sharpe_rati
     sharpe_array_concat = pd.concat([sharpe_array_concat, sharpe_array])
     weight_concat = pd.concat([weight_concat,w_df]).fillna(0)
     return weight_concat, w_df
+
+def output_mgmt(weight_concat):
+    weight_concat.drop('sharpe', axis=1, inplace=True)
+
+    this_month_weight = weight_concat.iloc[-1]
+    this_month_weight = pd.DataFrame([this_month_weight])
+    weight_concat = weight_concat.drop(index=weight_concat.index[-1])
+    return weight_concat, this_month_weight
+
