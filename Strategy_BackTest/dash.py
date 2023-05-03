@@ -1,7 +1,35 @@
+import pandas as pd
+import datetime, ssl
+import yfinance as yf
+import numpy as np 
+import warnings
+from sendgrid import SendGridAPIClient
+from sendgrid.helpers.mail import Mail
+import matplotlib.pyplot as plt
+from datetime import datetime
+from calendar import monthrange
+from dateutil.relativedelta import relativedelta
+from scipy.optimize import minimize, Bounds, LinearConstraint
+import Strategy_BackTest.dash as dash
+import os
+import plotly.io as pio
 from dash.dependencies import Input, Output
 import dash_core_components as dcc
 import dash_html_components as html
+import plotly.graph_objs as go
+from Utils import *
+from Trend_Following import *
+warnings.filterwarnings("ignore")
+from OptimizerBackTest import *
 import numpy as np
+from Utils import bench, this_month_weight, sharpe_array
+from OptimizerBackTest import portfolio_return_concat, portfolio_return_concat, weight_concat, vol_arr, ret_arr, sharpe_arr
+from datamanagement import asset_classes
+from dash.dependencies import Input, Output
+
+benchmark = 'Bench_Return'
+
+Bench, merged_df = bench(portfolio_return_concat.index.min(), benchmark, portfolio_return_concat)
 
 def correlation_matrix(sharpe_array, column):
     corr_matrix = sharpe_array.corr()
