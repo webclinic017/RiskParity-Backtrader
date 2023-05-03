@@ -59,7 +59,7 @@ def weightings(w, Y_adjusted, i, weight_concat, sharpe_array_concat, sharpe_rati
     sharpe_array['sharpe'] = sharpe_ratio
     sharpe_array_concat = pd.concat([sharpe_array_concat, sharpe_array])
     weight_concat = pd.concat([weight_concat,w_df]).fillna(0)
-    return weight_concat, w_df
+    return weight_concat, w_df, sharpe_array_concat
 
 def output_mgmt(weight_concat):
     weight_concat.drop('sharpe', axis=1, inplace=True)
