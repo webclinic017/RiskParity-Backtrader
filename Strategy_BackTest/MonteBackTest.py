@@ -144,34 +144,6 @@ if   trend == 'rsi':
 elif trend == 'sma':
     rolling_long_df = dummy_L_df
 
-# Data management of weights and returns.
-
-
-# Spy returns & portfolio returns
-
-def bench(Bench_start, benchmark):
-    Bench_W = Bench = pd.DataFrame([])
-    for i in benchmark:
-        if i == 'VTI':
-            Bench_W = yf.download(i, start=Bench_start, end=End)['Adj Close'].pct_change() * 0.6
-        else:
-            Bench_W = yf.download(i, start=Bench_start, end=End)['Adj Close'].pct_change() * 0.4
-        Bench = pd.concat([Bench, Bench_W], axis=1)
-    Bench = pd.DataFrame(pd.DataFrame(Bench)).sum(axis=1)
-    Bench.iloc[0] = 0
-    Bench = (1 + Bench).cumprod() * 10000
-    Bench = pd.DataFrame(Bench)
-    Bench.columns = ['Bench_Return']
-    
-    return Bench
-
-Bench = bench(portfolio_return_concat.index.min(), benchmark)
-benchmark = 'Bench_Return'
-
-merged_df = portfolio_return_concat
-merged_df.iloc[0] = 0
-merged_df = (1 + merged_df).cumprod() * 10000
-
 portfolio_return_concat, weight_concat, vol_arr, ret_arr, sharpe_arr  = backtest(rng_start, ret, ret.pct_change(), rolling_long_df)
 
 '''

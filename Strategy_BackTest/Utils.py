@@ -69,3 +69,21 @@ def output_mgmt(weight_concat):
     weight_concat = weight_concat.drop(index=weight_concat.index[-1])
     return weight_concat, this_month_weight
 
+def bench(Bench_start, benchmark, portfolio_return_concat):
+    Bench_W = Bench = pd.DataFrame([])
+    for i in benchmark:
+        if i == 'VTI':
+            Bench_W = yf.download(i, start=Bench_start, end=End)['Adj Close'].pct_change() * 0.6
+        else:
+            Bench_W = yf.download(i, start=Bench_start, end=End)['Adj Close'].pct_change() * 0.4
+        Bench = pd.concat([Bench, Bench_W], axis=1)
+    Bench = pd.DataFrame(pd.DataFrame(Bench)).sum(axis=1)
+    Bench.iloc[0] = 0
+    Bench = (1 + Bench).cumprod() * 10000
+    Bench = pd.DataFrame(Bench)
+    Bench.columns = ['Bench_Return']
+
+    merged_df = portfolio_return_concat
+    merged_df.iloc[0] = 0
+    merged_df = (1 + merged_df).cumprod() * 10000
+    return Bench, merged_df
