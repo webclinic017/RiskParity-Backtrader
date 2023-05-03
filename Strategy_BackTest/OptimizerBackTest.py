@@ -56,9 +56,9 @@ def optimizerbacktest(Y_adjusted, trend_df, daily_returns_log):
         current_month_returns = daily_returns_log[daily_returns_log.index.month == current_month]
         next_month_returns = daily_returns_log[daily_returns_log.index.month == next_month]
         if row_number != stopper:
-            print(index)
-            Y_adjusted          = asset_trimmer(index, trend_df, current_month_returns)
-            print(Y_adjusted)
+            print(trend_df.iloc[row_number])
+
+            Y_adjusted = asset_trimmer(row_number, trend_df, current_month_returns)
             if not Y_adjusted.empty:
                 month_returns_log   = current_month_returns.iloc[row_number]
                 cov                 = month_returns_log.T.cov(other=month_returns_log)
@@ -92,4 +92,3 @@ portfolio_return_concat, weight_concat, sharpe_array_concat = optimizerbacktest(
 merged_df = portfolio_return_concat.sort_index(ascending=True)
 merged_df.iloc[0] = 0
 merged_df = (1 + merged_df).cumprod() * 10000
-print(merged_df.to_string())
