@@ -6,6 +6,9 @@ from Utils import *
 from Trend_Following import *
 from OptimizerBackTest import *
 import numpy as np
+import dash
+import dash_core_components as dcc
+from dash import html
 from Utils import bench
 from OptimizerBackTest import portfolio_return_concat, portfolio_return_concat, weight_concat, asset_classes, sharpe_array_concat
 
@@ -14,6 +17,8 @@ warnings.filterwarnings("ignore")
 benchmark = 'Bench_Return'
 
 Bench, merged_df = bench(portfolio_return_concat.index.min(), benchmark, portfolio_return_concat)
+print(portfolio_return_concat.to_string())
+
 
 weight_concat, this_month_weight = output_mgmt(weight_concat)
 
@@ -147,7 +152,6 @@ def portfolio_returns_app(returns_df, weights_df, this_month_weight, Bench, shar
     corr_matrix = corr_matrix.sort_values(by='sharpe', ascending=True)
     corr_matrix_long = long_names(asset_classes, corr_matrix.T).T
     corr_matrix, corr_matrix_long = df_merger(corr_matrix, corr_matrix_long)
-    ret_arr_list = ret_arr.index.strftime('%Y-%m-%d').tolist()
 
     data = [
         go.Heatmap(

@@ -34,7 +34,7 @@ def ret_risk(W, exp_ret, cov):
     return -(np.dot(W.T.flatten(), exp_ret) / np.sqrt(np.dot(np.dot(W.T, cov), W) * np.dot(exp_ret.T, exp_ret)))
 
 def ret(monthly_returns):
-    monthly_returns_log = np.log(monthly_returns/monthly_returns.shift(1))
+    monthly_returns_log = monthly_returns.pct_change() #np.log(monthly_returns/monthly_returns.shift(1))
     monthly_returns_log = monthly_returns_log.dropna()
     monthly_returns_log.index = pd.to_datetime(monthly_returns_log.index).strftime('%Y-%m-%d')
     return monthly_returns_log
@@ -68,12 +68,15 @@ def optimizerbacktest(Y_adjusted, trend_df, daily_returns_log):
             weight_concat, w_df, sharpe_array_concat = weightings(w, Y_adjusted, index, weight_concat, sharpe_array_concat, 1)
             month_returns_log   = pd.DataFrame(month_returns_log)
 
-
             # current_month_returns here should be next month returns...
             Y_adjusted_next_L   = pd.DataFrame(asset_trimmer(row_number, trend_df, next_month_returns)) #Long
 
             w = w_df.drop('sharpe', axis=1)
-
+            if "VTI" in w and (w['VTI'] == 0.6).any and "VTI" not in Y_adjusted_next_L.columns:
+                    portfolio_return['VTI'] = yf.download("VTI", start=Start, end=End)['Adj Close'].pct_change()
+            if "BIL" in w and (w['BIL'] == 0.4).any and "BND" not in Y_adjusted_next_L.columns:
+                    portfolio_return['BIL'] = yf.download("BND", start=Start, end=End)['Adj Close'].pct_change()
+            
             for col in w:
                 new_df = pd.DataFrame(w[col].values * Y_adjusted_next_L[col], columns=[col])
                 portfolio_return.index = new_df.index
@@ -82,14 +85,9 @@ def optimizerbacktest(Y_adjusted, trend_df, daily_returns_log):
                 else:
                     print("The index of new_df f{new_df.index} doesnt match the index of portfolio_return f{portfolio_return}")
 
+
+                portfolio_return = pd.DataFrame(portfolio_return.sum(axis=1), columns=['portfolio_return'])
         portfolio_return_concat = pd.concat([portfolio_return_concat, portfolio_return], axis=0) #Long
     return portfolio_return_concat, weight_concat, sharpe_array_concat
 
 portfolio_return_concat, weight_concat, sharpe_array_concat = optimizerbacktest(monthly_returns_log, dummy_L_df, daily_returns_log)
-
-'''
-Here will be the optimization,
-
-It needs to have monthly data fed into the optimization.
-
-'''
