@@ -65,11 +65,15 @@ def asset_trimmer(b, df_split_monthly, Y):
     Y = Y.drop(columns=cols_to_drop)
     return Y
 
+print(daily_returns.loc[200])
+
 def optimizerbacktest(Y_adjusted, trend_df, daily_returns_log):
     weight_concat = sharpe_array_concat = portfolio_return_concat = pd.DataFrame()
     stopper = len(monthly_returns_log)
     monthly_returns_log.index = pd.to_datetime(monthly_returns_log.index)  # Convert index to datetime
     daily_returns_log.index = pd.to_datetime(daily_returns_log.index)
+
+    print(trend_df)
 
     for row_number, (index, row) in enumerate(monthly_returns_log.iterrows(), 1):
 
@@ -108,7 +112,6 @@ def optimizerbacktest(Y_adjusted, trend_df, daily_returns_log):
     merged_df = (1 + merged_df).cumprod() * 10000
     return merged_df, weight_concat, sharpe_array_concat
 
-
 portfolio_return_concat, weight_concat, sharpe_array_concat = optimizerbacktest(monthly_returns_log, dummy_L_df, daily_returns_log)
 
-
+print(portfolio_return_concat)
