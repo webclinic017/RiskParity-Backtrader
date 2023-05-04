@@ -41,9 +41,6 @@ def optimize_portfolio(returns_data):
     # Number of assets in the portfolio
     num_assets = len(returns_data.columns)
 
-    # Calculate mean daily returns
-    mean_returns = returns_data.mean()
-
     # Calculate covariance matrix
     cov_matrix = returns_data.cov()
 
@@ -56,7 +53,8 @@ def optimize_portfolio(returns_data):
 
     # Define optimization constraints
     constraints = (
-        {'type': 'eq', 'fun': lambda x: np.sum(x) - 1}  # Constraint: weights sum to 1
+        {'type': 'eq', 'fun': lambda x: np.sum(x) - 1},  # Constraint: weights sum to 1
+        {'type': 'ineq', 'fun': lambda x: 0.8 - x}  # Constraint: no asset weight exceeds 0.8 (80%)
     )
 
     # Define optimization bounds
@@ -68,11 +66,12 @@ def optimize_portfolio(returns_data):
     # Perform portfolio optimization
     result = minimize(portfolio_variance, initial_weights, method='SLSQP', constraints=constraints, bounds=bounds)
 
+    print(result.message)
+
     # Extract optimized weights
     optimized_weights = result.x
 
     return optimized_weights
-
 
 def ret(monthly_returns):
     monthly_returns_log = monthly_returns.pct_change() #np.log(monthly_returns/monthly_returns.shift(1))
