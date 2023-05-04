@@ -13,29 +13,7 @@ warnings.filterwarnings("ignore")
 
 monthly_returns, asset_classes, asset = data_management(Start, End, '1mo')
 daily_returns, asset_classes, asset = data_management(Start, End, '1d')
-
 monthly_returns = monthly_returns.dropna()
-
-def optimize(func, W, exp_ret, cov, target_return):
-    opt_bounds = Bounds(0, 1)
-    opt_constraints = ({'type': 'eq',
-                        'fun': lambda W: 1.0 - np.sum(W)})
-    
-    optimal_weights = minimize(func, W, 
-                               args=(exp_ret, cov),
-                               method='SLSQP',
-                               bounds=opt_bounds,
-                               constraints=opt_constraints,
-                               options={'maxiter': 100000000, 'ftol': 1e-3})
-    print(optimal_weights['message'])
-    return optimal_weights
-
-def ret_risk(W, exp_ret, cov):
-    print(W)
-    print(type(exp_ret.values))
-    ret     = W@exp_ret.values
-    risk    = W.T@cov@W
-    return -(ret/np.sqrt(risk))
 
 def optimize_portfolio(returns_data):
     # Number of assets in the portfolio
@@ -109,7 +87,7 @@ def optimizerbacktest(Y_adjusted, trend_df, daily_returns_log):
             if not Y_adjusted.empty:
                 month_returns_log   = current_month_returns.iloc[row_number]
                 w = optimize_portfolio(Y_adjusted)
-
+                print(trend_df_2)
                 weight_concat, w_df, sharpe_array_concat = weightings(w, Y_adjusted, index, weight_concat, sharpe_array_concat, 1)
                 month_returns_log   = pd.DataFrame(month_returns_log)
 
