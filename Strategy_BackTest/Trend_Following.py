@@ -18,6 +18,7 @@ ret, asset_classes, asset = data_management(Start, End, '1d')
 def calculate_rolling_average(ret, days):
     ret = ret.dropna()
     rolling_df = pd.DataFrame()
+    print(ret[column])
     for column in ret.columns:
         rolling_df[column] = ret[column].rolling(window=200).mean()
     rolling_df = dummy_sma(rolling_df, ret)

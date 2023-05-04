@@ -80,14 +80,12 @@ def optimizerbacktest(Y_adjusted, trend_df, daily_returns_log):
 
         current_month_returns = daily_returns_log[daily_returns_log.index.month == current_month]
         next_month_returns = daily_returns_log[daily_returns_log.index.month == next_month]
-
         if row_number != stopper:
             trend_df_2 = pd.DataFrame(trend_df.iloc[row_number+1])
             Y_adjusted = asset_trimmer(row_number+1, trend_df_2.T, current_month_returns)
             if not Y_adjusted.empty:
                 month_returns_log   = current_month_returns.iloc[row_number]
                 w = optimize_portfolio(Y_adjusted)
-                print(trend_df_2)
                 weight_concat, w_df, sharpe_array_concat = weightings(w, Y_adjusted, index, weight_concat, sharpe_array_concat, 1)
                 month_returns_log   = pd.DataFrame(month_returns_log)
 
@@ -105,12 +103,12 @@ def optimizerbacktest(Y_adjusted, trend_df, daily_returns_log):
 
             portfolio_return = pd.DataFrame(portfolio_return.sum(axis=1), columns=['portfolio_return'])
         portfolio_return_concat = pd.concat([portfolio_return_concat, portfolio_return], axis=0) #Long
-    return portfolio_return_concat, weight_concat, sharpe_array_concat
+    merged_df = portfolio_return_concat.sort_index(ascending=True)
+    merged_df.iloc[0] = 0
+    merged_df = (1 + merged_df).cumprod() * 10000
+    return merged_df, weight_concat, sharpe_array_concat
 
 
 portfolio_return_concat, weight_concat, sharpe_array_concat = optimizerbacktest(monthly_returns_log, dummy_L_df, daily_returns_log)
 
 
-merged_df = portfolio_return_concat.sort_index(ascending=True)
-merged_df.iloc[0] = 0
-merged_df = (1 + merged_df).cumprod() * 10000
