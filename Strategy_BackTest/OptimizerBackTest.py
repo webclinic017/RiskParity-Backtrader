@@ -65,47 +65,41 @@ def asset_trimmer(b, df_split_monthly, Y):
     Y = Y.drop(columns=cols_to_drop)
     return Y
 
-print(daily_returns.iloc[200:201].index)
 
 def optimizerbacktest(Y_adjusted, trend_df, daily_returns_log):
     weight_concat = sharpe_array_concat = portfolio_return_concat = pd.DataFrame()
     stopper = len(monthly_returns_log)
     monthly_returns_log.index = pd.to_datetime(monthly_returns_log.index)  # Convert index to datetime
     daily_returns_log.index = pd.to_datetime(daily_returns_log.index)
-
-
+    date_bench = daily_returns_log.iloc[199:200].index
     for row_number, (index, row) in enumerate(monthly_returns_log.iterrows(), 1):
+        if pd.DatetimeIndex([index]) > date_bench:
 
-        current_month = index.month
-        next_month = current_month + 1
+            current_month = index.month
+            next_month = index + relativedelta(months=1)
+            portfolio_return = month_returns_log = trend_df_2 = Y_adjusted = current_month_returns = pd.DataFrame()
 
-        portfolio_return = month_returns_log = trend_df_2 = Y_adjusted = current_month_returns = pd.DataFrame()
-
-        current_month_returns = daily_returns_log[daily_returns_log.index.month == current_month]
-        next_month_returns = daily_returns_log[daily_returns_log.index.month == next_month]
-        if row_number != stopper:
-            trend_df_2 = pd.DataFrame(trend_df.iloc[row_number+1])
-            Y_adjusted = asset_trimmer(row_number+1, trend_df_2.T, current_month_returns)
-            if not Y_adjusted.empty:
-                month_returns_log   = current_month_returns.iloc[row_number]
-                w = optimize_portfolio(Y_adjusted)
-                weight_concat, w_df, sharpe_array_concat = weightings(w, Y_adjusted, index, weight_concat, sharpe_array_concat, 1)
-                month_returns_log   = pd.DataFrame(month_returns_log)
-
-                Y_adjusted_next_L   = pd.DataFrame(asset_trimmer(row_number+2, trend_df, next_month_returns)) #Long
-
-                w = w_df.drop('sharpe', axis=1)
-
-                for col in w:
-                    new_df = pd.DataFrame(w[col].values * Y_adjusted_next_L[col], columns=[col])
-                    portfolio_return.index = new_df.index
-                    if new_df.index.equals(portfolio_return.index):
-                        portfolio_return = portfolio_return.merge(new_df, left_index = True, right_index=True)
-                    else:
-                        print("The index of new_df f{new_df.index} doesnt match the index of portfolio_return f{portfolio_return}")
-
-            portfolio_return = pd.DataFrame(portfolio_return.sum(axis=1), columns=['portfolio_return'])
-        portfolio_return_concat = pd.concat([portfolio_return_concat, portfolio_return], axis=0) #Long
+            current_month_returns = daily_returns_log[(daily_returns_log.index.month == index.month) & (daily_returns_log.index.year == index.year)]
+            next_month_returns = daily_returns_log[(daily_returns_log.index.month == next_month.month) & (daily_returns_log.index.year == next_month.year)]
+            if row_number != stopper:
+                trend_df_2 = pd.DataFrame(trend_df.iloc[row_number+1])
+                Y_adjusted = asset_trimmer(row_number+1, trend_df_2.T, current_month_returns)
+                if not Y_adjusted.empty:
+                    month_returns_log   = current_month_returns.iloc[row_number]
+                    w = optimize_portfolio(Y_adjusted)
+                    weight_concat, w_df, sharpe_array_concat = weightings(w, Y_adjusted, index, weight_concat, sharpe_array_concat, 1)
+                    month_returns_log   = pd.DataFrame(month_returns_log)
+                    Y_adjusted_next_L   = pd.DataFrame(asset_trimmer(row_number+2, pd.DataFrame(trend_df.iloc[row_number+1]), next_month_returns)) #Long
+                    w = w_df.drop('sharpe', axis=1)
+                    for col in w:
+                        new_df = pd.DataFrame(w[col].values * Y_adjusted_next_L[col], columns=[col])
+                        portfolio_return.index = new_df.index
+                        if new_df.index.equals(portfolio_return.index):
+                            portfolio_return = portfolio_return.merge(new_df, left_index = True, right_index=True)
+                        else:
+                            print("The index of new_df f{new_df.index} doesnt match the index of portfolio_return f{portfolio_return}")
+                    portfolio_return = pd.DataFrame(portfolio_return.sum(axis=1), columns=['portfolio_return'])
+                portfolio_return_concat = pd.concat([portfolio_return_concat, portfolio_return], axis=0) #Long
     merged_df = portfolio_return_concat.sort_index(ascending=True)
     merged_df.iloc[0] = 0
     merged_df = (1 + merged_df).cumprod() * 10000
@@ -113,4 +107,4 @@ def optimizerbacktest(Y_adjusted, trend_df, daily_returns_log):
 
 portfolio_return_concat, weight_concat, sharpe_array_concat = optimizerbacktest(monthly_returns_log, dummy_L_df, daily_returns_log)
 
-print(portfolio_return_concat)
+print(portfolio_return_concat.to_string())
