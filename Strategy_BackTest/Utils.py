@@ -71,12 +71,15 @@ def output_mgmt(weight_concat):
 
 def bench(Bench_start, benchmark, portfolio_return_concat):
     Bench_W = Bench = pd.DataFrame([])
-    for i in benchmark:
+    print(benchmark)
+    benchasset = ['VTI','BND']
+    for i in benchasset:
         if i == 'VTI':
             Bench_W = yf.download(i, start=Bench_start, end=End)['Adj Close'].pct_change() * 0.6
         else:
             Bench_W = yf.download(i, start=Bench_start, end=End)['Adj Close'].pct_change() * 0.4
         Bench = pd.concat([Bench, Bench_W], axis=1)
+    print(benchmark)
     Bench = pd.DataFrame(pd.DataFrame(Bench)).sum(axis=1)
     Bench.iloc[0] = 0
     Bench = (1 + Bench).cumprod() * 10000

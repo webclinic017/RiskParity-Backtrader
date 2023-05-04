@@ -4,7 +4,6 @@ from calendar import monthrange
 import plotly.graph_objs as go
 from Utils import *
 from Trend_Following import *
-from OptimizerBackTest import *
 import numpy as np
 import dash
 import dash_core_components as dcc
