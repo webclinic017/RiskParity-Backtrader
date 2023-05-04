@@ -97,11 +97,11 @@ def optimizerbacktest(Y_adjusted, trend_df, daily_returns_log):
     daily_returns_log.index = pd.to_datetime(daily_returns_log.index)
 
     for row_number, (index, row) in enumerate(monthly_returns_log.iterrows(), 1):
-        
+
         current_month = index.month
         next_month = current_month + 1
 
-        portfolio_return = month_returns_log = cov = trend_df_2, Y_adjusted = current_month_returns = pd.DataFrame()
+        portfolio_return = month_returns_log = trend_df_2 = Y_adjusted = current_month_returns = pd.DataFrame()
 
         current_month_returns = daily_returns_log[daily_returns_log.index.month == current_month]
         next_month_returns = daily_returns_log[daily_returns_log.index.month == next_month]
@@ -110,7 +110,6 @@ def optimizerbacktest(Y_adjusted, trend_df, daily_returns_log):
             trend_df_2 = pd.DataFrame(trend_df.iloc[row_number+1])
             Y_adjusted = asset_trimmer(row_number+1, trend_df_2.T, current_month_returns)
             if not Y_adjusted.empty:
-                print("loop f{row_number}, f{index}")
                 month_returns_log   = current_month_returns.iloc[row_number]
                 w = optimize_portfolio(Y_adjusted)
 
