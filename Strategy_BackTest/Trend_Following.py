@@ -20,6 +20,7 @@ def calculate_rolling_average(ret, days):
     rolling_df = pd.DataFrame()
     for column in ret.columns:
         rolling_df[column] = ret[column].rolling(window=200).mean()
+    print(rolling_df)
     rolling_df = dummy_sma(rolling_df, ret)
     return rolling_df
 
