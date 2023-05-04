@@ -48,11 +48,9 @@ def optimize_portfolio(returns_data):
     cov_matrix = returns_data.cov()
 
     # Set random seed for reproducibility
-    np.random.seed(0)
 
     # Define optimization function
     def portfolio_variance(weights):
-        portfolio_return = np.dot(weights, mean_returns)
         portfolio_variance = np.dot(weights.T, np.dot(cov_matrix, weights))
         return portfolio_variance
 
@@ -139,4 +137,3 @@ portfolio_return_concat, weight_concat, sharpe_array_concat = optimizerbacktest(
 merged_df = portfolio_return_concat.sort_index(ascending=True)
 merged_df.iloc[0] = 0
 merged_df = (1 + merged_df).cumprod() * 10000
-print(merged_df)
