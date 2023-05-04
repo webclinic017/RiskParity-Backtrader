@@ -100,11 +100,9 @@ def optimizerbacktest(Y_adjusted, trend_df, daily_returns_log):
                             print("The index of new_df f{new_df.index} doesnt match the index of portfolio_return f{portfolio_return}")
                     portfolio_return = pd.DataFrame(portfolio_return.sum(axis=1), columns=['portfolio_return'])
                 portfolio_return_concat = pd.concat([portfolio_return_concat, portfolio_return], axis=0) #Long
-    merged_df = portfolio_return_concat.sort_index(ascending=True)
-    merged_df.iloc[0] = 0
-    merged_df = (1 + merged_df).cumprod() * 10000
-    return merged_df, weight_concat, sharpe_array_concat
+    #merged_df = portfolio_return_concat.sort_index(ascending=True)
+    #merged_df.iloc[0] = 0
+    #merged_df = (1 + merged_df).cumprod() * 10000
+    return portfolio_return_concat, weight_concat, sharpe_array_concat
 
 portfolio_return_concat, weight_concat, sharpe_array_concat = optimizerbacktest(monthly_returns_log, dummy_L_df, daily_returns_log)
-
-print(portfolio_return_concat.to_string())
