@@ -50,7 +50,9 @@ def optimize_sharpe_ratio(mean_returns, cov_matrix, risk_free_rate=0, w_bounds=(
 
     init_guess = np.array([1/len(mean_returns) for _ in range(len(mean_returns))])
     args = (mean_returns, cov_matrix, risk_free_rate)
-    constraints = ({'type': 'eq', 'fun': lambda x: np.sum(x) - 1})
+    constraints = ({'type': 'eq', 'fun': lambda x: np.sum(x) - 1},
+                   {'type': 'ineq', 'fun': lambda x: 0.8 - x}
+                   )
     result = opt.minimize(fun=neg_sharpe_ratio,
                           x0=init_guess,
                           args=args,
