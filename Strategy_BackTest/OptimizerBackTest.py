@@ -19,7 +19,7 @@ monthly_returns = monthly_returns.dropna()
 ### New optimization, max sharpe
 def neg_sharpe_ratio(weights, mean_returns, cov_matrix, risk_free_rate=0):
     portfolio_return, portfolio_var, portfolio_std = portfolio(weights, mean_returns, cov_matrix)
-    sr = ((portfolio_return - risk_free_rate)/portfolio_std) * (252**0.5) # annualized
+    sr = ((portfolio_return - risk_free_rate)/portfolio_std) * (len(mean_returns)**0.5) # annualized
     return(-sr)
 
 def calc_returns_stats(returns):
@@ -33,6 +33,7 @@ def calc_returns_stats(returns):
     """
     mean_returns = returns.mean()
     cov_matrix = returns.cov()
+    print(mean_returns)
     return(mean_returns, cov_matrix)
 
 def portfolio(weights, mean_returns, cov_matrix):
