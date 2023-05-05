@@ -73,7 +73,7 @@ def generate_weights_table(weights_df, asset_classes):
                                      'padding': '1px',
                                      'font-family': 'Arial',
                                      'font-size': '12px',
-                                     'background-color': '#0DBF00' #if weights_df.loc[index, col] > 0.5 
+                                     'background-color': 'white' #if weights_df.loc[index, col] > 0.5 
                                        #else '#9ACD32' if weights_df.loc[index, col] > 0.2 
                                        #else '#6FD17A' if weights_df.loc[index, col] > 0.1
                                        #else '#D6FF97' if weights_df.loc[index, col] > 0.04
