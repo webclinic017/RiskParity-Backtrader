@@ -1,5 +1,6 @@
 import numpy as np
 import pandas as pd
+import scipy.optimize as opt
 from scipy.optimize import minimize
 from scipy.optimize import minimize, Bounds, LinearConstraint
 from Utils import *
@@ -15,6 +16,63 @@ monthly_returns, asset_classes, asset = data_management(Start, End, '1mo')
 daily_returns, asset_classes, asset = data_management(Start, End, '1d')
 monthly_returns = monthly_returns.dropna()
 
+### New optimization, max sharpe
+def neg_sharpe_ratio(weights, mean_returns, cov_matrix, risk_free_rate=0):
+    portfolio_return, portfolio_var, portfolio_std = portfolio(weights, mean_returns, cov_matrix)
+    sr = ((portfolio_return - risk_free_rate)/portfolio_std) * (252**0.5) # annualized
+    return(-sr)
+
+def calc_returns_stats(returns):
+    """
+    Parameters
+        returns: returns timeseries pd.DataFrame object
+
+    Returns:
+        mean_returns: Avereage of returns
+        cov_matrix: returns Covariance matrix
+    """
+    mean_returns = returns.mean()
+    cov_matrix = returns.cov()
+    return(mean_returns, cov_matrix)
+
+def portfolio(weights, mean_returns, cov_matrix):
+
+    portfolio_return = np.dot(weights.reshape(1,-1), mean_returns.values.reshape(-1,1))
+    portfolio_var = np.dot(np.dot(weights.reshape(1,-1), cov_matrix.values), weights.reshape(-1,1))
+    portfolio_std = np.sqrt(portfolio_var)
+
+    return(np.squeeze(portfolio_return),np.squeeze(portfolio_var),np.squeeze(portfolio_std))
+
+
+def optimize_sharpe_ratio(mean_returns, cov_matrix, risk_free_rate=0, w_bounds=(0,1)):
+    "This function finds the portfolio weights which minimize the negative sharpe ratio"
+
+    init_guess = np.array([1/len(mean_returns) for _ in range(len(mean_returns))])
+    args = (mean_returns, cov_matrix, risk_free_rate)
+    constraints = ({'type': 'eq', 'fun': lambda x: np.sum(x) - 1})
+    result = opt.minimize(fun=neg_sharpe_ratio,
+                          x0=init_guess,
+                          args=args,
+                          method='SLSQP',
+                          bounds=tuple(w_bounds for _ in range(len(mean_returns))),
+                          constraints=constraints,
+                          )
+    
+    if result['success']:
+        print(result['message'])
+        opt_sharpe = - result['fun']
+        opt_weights = result['x']
+        opt_return, opt_variance, opt_std = portfolio(opt_weights, mean_returns, cov_matrix)
+        print(opt_weights)
+        return(opt_sharpe, opt_weights, opt_return.item()*252, opt_variance.item()*252, opt_std.item()*(252**0.5))
+    else:
+        print("Optimization was not succesfull!")
+        print(result['message'])
+        return(None)
+
+
+
+### Old optimization method, min variance
 def optimize_portfolio(returns_data):
     # Number of assets in the portfolio
     num_assets = len(returns_data.columns)
@@ -32,8 +90,6 @@ def optimize_portfolio(returns_data):
     # Define optimization constraints
     constraints = (
     {'type': 'eq', 'fun': lambda x: np.sum(x) - 1},  # Constraint: weights sum to 1
-    {'type': 'ineq', 'fun': lambda x: x - 0.1},  # Constraint: asset weight >= 0.1 (10%)
-    {'type': 'ineq', 'fun': lambda x: 0.8 - x}  # Constraint: asset weight <= 0.8 (80%)
     )
 
     # Define optimization bounds
@@ -61,11 +117,6 @@ def ret(monthly_returns):
 monthly_returns_log = ret(monthly_returns)
 daily_returns_log   = ret(daily_returns)
 
-def asset_trimmer(b, df_split_monthly, Y):
-    cols_to_drop = [col for col in df_split_monthly.columns if df_split_monthly[col].max() < 0.8]
-    Y = Y.drop(columns=cols_to_drop)
-    return Y
-
 
 def optimizerbacktest(Y_adjusted, trend_df, daily_returns_log):
     weight_concat = sharpe_array_concat = portfolio_return_concat = pd.DataFrame()
@@ -76,21 +127,34 @@ def optimizerbacktest(Y_adjusted, trend_df, daily_returns_log):
     for row_number, (index, row) in enumerate(monthly_returns_log.iterrows(), 1):
         if pd.DatetimeIndex([index]) > date_bench:
 
-            current_month = index.month
             next_month = index + relativedelta(months=1)
-            portfolio_return = month_returns_log = trend_df_2 = Y_adjusted = current_month_returns = pd.DataFrame()
 
+            #Set up empty DF
+            portfolio_return = trend_df_2 = Y_adjusted = current_month_returns = pd.DataFrame()
+
+            #Split my df into current and next month, current for calculating the portfolio, and next for the backtest.
             current_month_returns = daily_returns_log[(daily_returns_log.index.month == index.month) & (daily_returns_log.index.year == index.year)]
             next_month_returns = daily_returns_log[(daily_returns_log.index.month == next_month.month) & (daily_returns_log.index.year == next_month.year)]
+
             if row_number != stopper:
+
+                #This is my trend tracker df, and we adjust the returns and next returns later on by this to select only trending assets.
                 trend_df_2 = pd.DataFrame(trend_df.iloc[row_number+1])
-                Y_adjusted = asset_trimmer(row_number+1, trend_df_2.T, current_month_returns)
+                Y_adjusted = asset_trimmer(trend_df_2.T, current_month_returns)
+
                 if not Y_adjusted.empty:
-                    month_returns_log   = current_month_returns.iloc[row_number]
-                    w = optimize_portfolio(Y_adjusted)
+
+                    mean_returns, cov_matrix = calc_returns_stats(Y_adjusted)
+
+                    # max sharpe portfolio
+                    opt_sharpe, w, opt_return, opt_variance, opt_std = optimize_sharpe_ratio(
+                                                                                    mean_returns,
+                                                                                    cov_matrix,
+                                                                                    risk_free_rate=0, w_bounds=(0,1))
+
+                    #w = optimize_portfolio(Y_adjusted)
                     weight_concat, w_df, sharpe_array_concat = weightings(w, Y_adjusted, index, weight_concat, sharpe_array_concat, 1)
-                    month_returns_log   = pd.DataFrame(month_returns_log)
-                    Y_adjusted_next_L   = pd.DataFrame(asset_trimmer(row_number+2, pd.DataFrame(trend_df.iloc[row_number+1]), next_month_returns)) #Long
+                    Y_adjusted_next_L   = pd.DataFrame(asset_trimmer(pd.DataFrame(trend_df.iloc[row_number+1]), next_month_returns)) #Long
                     w = w_df.drop('sharpe', axis=1)
                     for col in w:
                         new_df = pd.DataFrame(w[col].values * Y_adjusted_next_L[col], columns=[col])
@@ -105,3 +169,5 @@ def optimizerbacktest(Y_adjusted, trend_df, daily_returns_log):
     return portfolio_return_concat, weight_concat, sharpe_array_concat
 
 portfolio_return_concat, weight_concat, sharpe_array_concat = optimizerbacktest(monthly_returns_log, dummy_L_df, daily_returns_log)
+
+print(weight_concat)
