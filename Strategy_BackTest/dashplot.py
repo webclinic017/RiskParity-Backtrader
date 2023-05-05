@@ -17,6 +17,7 @@ benchmark = 'Bench_Return'
 
 Bench, merged_df = bench(portfolio_return_concat.index.min(), benchmark, portfolio_return_concat)
 
+
 weight_concat, this_month_weight = output_mgmt(weight_concat)
 
 def correlation_matrix(sharpe_array, column):
@@ -41,6 +42,7 @@ def generate_weights_table(weights_df, asset_classes):
     weight_long = long_names(asset_classes, weights_df)
     weights_df2 = weights_df.copy()
     weights_df, weight_long = df_merger(weights_df, weight_long)
+    print(weights_df)
     weights_table = html.Table(
         style={'border': '1px solid black', 'padding': '10px'},
         children=[
@@ -71,11 +73,11 @@ def generate_weights_table(weights_df, asset_classes):
                                      'padding': '1px',
                                      'font-family': 'Arial',
                                      'font-size': '12px',
-                                     'background-color': '#0DBF00' if weights_df.loc[index, col] > 0.5 
-                                       else '#9ACD32' if weights_df.loc[index, col] > 0.2 
-                                       else '#6FD17A' if weights_df.loc[index, col] > 0.1
-                                       else '#D6FF97' if weights_df.loc[index, col] > 0.04
-                                       else 'white',
+                                     'background-color': '#0DBF00' #if weights_df.loc[index, col] > 0.5 
+                                       #else '#9ACD32' if weights_df.loc[index, col] > 0.2 
+                                       #else '#6FD17A' if weights_df.loc[index, col] > 0.1
+                                       #else '#D6FF97' if weights_df.loc[index, col] > 0.04
+                                       #else 'white',
                                        },
                                        title=col,
                                 ) for col in weights_df.columns],
