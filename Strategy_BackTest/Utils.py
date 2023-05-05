@@ -5,7 +5,7 @@ from datetime import date
 import numpy as np
 import yfinance as yf
 
-Start = '2020-01-01'
+Start = '2018-01-01'
 End = date.today().strftime("%Y-%m-%d")
 
 date1 = datetime.strptime(Start, "%Y-%m-%d")
