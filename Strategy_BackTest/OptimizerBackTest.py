@@ -7,13 +7,13 @@ from Utils import *
 import warnings
 from dateutil.relativedelta import relativedelta
 from datamanagement import *
-from Trend_Following import dummy_L_df
+from Trend_Following import dummy_L_df, ret as daily_returns, asset_classes, asset
 warnings.filterwarnings("ignore")
 
 #from Trend_Following import * #Start, End, ret, dummy_L_df, months_between, next_month
 
 monthly_returns, asset_classes, asset = data_management(Start, End, '1mo')
-daily_returns, asset_classes, asset = data_management(Start, End, '1d')
+#daily_returns, asset_classes, asset = data_management(Start, End, '1d')
 monthly_returns = monthly_returns.dropna()
 
 ### New optimization, max sharpe
