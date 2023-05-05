@@ -63,7 +63,7 @@ def optimize_sharpe_ratio(mean_returns, cov_matrix, risk_free_rate=0, w_bounds=(
         opt_sharpe = - result['fun']
         opt_weights = result['x']
         opt_return, opt_variance, opt_std = portfolio(opt_weights, mean_returns, cov_matrix)
-        print(opt_weights)
+        print(opt_sharpe)
         return(opt_sharpe, opt_weights, opt_return.item()*252, opt_variance.item()*252, opt_std.item()*(252**0.5))
     else:
         print("Optimization was not succesfull!")
@@ -153,16 +153,13 @@ def optimizerbacktest(Y_adjusted, trend_df, daily_returns_log):
                                                                                     risk_free_rate=0, w_bounds=(0,1))
 
                     #w = optimize_portfolio(Y_adjusted)
-                    weight_concat, w_df, sharpe_array_concat = weightings(w, Y_adjusted, index, weight_concat, sharpe_array_concat, 1)
+                    weight_concat, w_df, sharpe_array_concat = weightings(w, Y_adjusted, next_month, weight_concat, sharpe_array_concat, 1)
                     Y_adjusted_next_L   = pd.DataFrame(asset_trimmer(pd.DataFrame(trend_df.iloc[row_number+1]), next_month_returns)) #Long
                     w = w_df.drop('sharpe', axis=1)
                     for col in w:
                         new_df = pd.DataFrame(w[col].values * Y_adjusted_next_L[col], columns=[col])
                         portfolio_return.index = new_df.index
-                        if new_df.index.equals(portfolio_return.index):
-                            portfolio_return = portfolio_return.merge(new_df, left_index = True, right_index=True)
-                        else:
-                            print("The index of new_df f{new_df.index} doesnt match the index of portfolio_return f{portfolio_return}")
+                        portfolio_return = portfolio_return.merge(new_df, left_index = True, right_index=True)
                     portfolio_return = pd.DataFrame(portfolio_return.sum(axis=1), columns=['portfolio_return'])
                 portfolio_return_concat = pd.concat([portfolio_return_concat, portfolio_return], axis=0) #Long
 
