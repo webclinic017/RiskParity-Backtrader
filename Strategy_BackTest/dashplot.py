@@ -16,8 +16,6 @@ warnings.filterwarnings("ignore")
 benchmark = 'Bench_Return'
 
 Bench, merged_df = bench(portfolio_return_concat.index.min(), benchmark, portfolio_return_concat)
-print(portfolio_return_concat.to_string())
-
 
 weight_concat, this_month_weight = output_mgmt(weight_concat)
 
