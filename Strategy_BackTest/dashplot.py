@@ -42,7 +42,6 @@ def generate_weights_table(weights_df, asset_classes):
     weight_long = long_names(asset_classes, weights_df)
     weights_df2 = weights_df.copy()
     weights_df, weight_long = df_merger(weights_df, weight_long)
-    print(weights_df)
     weights_table = html.Table(
         style={'border': '1px solid black', 'padding': '10px'},
         children=[
