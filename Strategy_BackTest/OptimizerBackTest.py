@@ -166,14 +166,15 @@ def optimizerbacktest(Y_adjusted, trend_df, daily_returns_log):
                     if b == False:
                         print("Failed")
                         w = [0.6,0.4]
-                        Y_adjusted = pd.DataFrame()
+                        Y_adjusted = Y_adjusted_next_L = pd.DataFrame()
                         Y_adjusted['VTI'] = yf.download("VTI", start=start_cur, end=end_cur)['Adj Close'].pct_change()
                         Y_adjusted['BND'] = yf.download("BND", start=start_cur, end=end_cur)['Adj Close'].pct_change()
                         Y_adjusted_next_L['VTI'] = yf.download("VTI", start=start_next, end=end_next)['Adj Close'].pct_change()
                         Y_adjusted_next_L['BND'] = yf.download("BND", start=start_next, end=end_next)['Adj Close'].pct_change()
 
-                    weight_concat, w_df, sharpe_array_concat = weightings(w, Y_adjusted, next_month, weight_concat, sharpe_array_concat, 1)
+                    weight_concat, w_df, sharpe_array_concat = weightings(w, Y_adjusted, next_month, weight_concat, sharpe_array_concat, 1, b)
                     Y_adjusted_next_L   = pd.DataFrame(asset_trimmer(pd.DataFrame(trend_df.iloc[row_number+1]), next_month_returns)) #Long
+
                     w = w_df.drop('sharpe', axis=1)
                     for col in w:
                         new_df = pd.DataFrame(w[col].values * Y_adjusted_next_L[col], columns=[col])

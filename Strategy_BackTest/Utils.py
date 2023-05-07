@@ -44,13 +44,13 @@ def portfolio_returns(w, Y_adjusted_next, i, oldw):
     df_portfolio_return = pd.DataFrame(df_daily_return.sum(axis=1), columns=['portfolio_return'])
     return df_portfolio_return
 
-def weightings(w, Y_adjusted, i, weight_concat, sharpe_array_concat, sharpe_ratio):
+def weightings(w, Y_adjusted, i, weight_concat, sharpe_array_concat, sharpe_ratio, b):
     w_df = pd.DataFrame(w)#.T
     w_df = w_df.T
     w_df.columns = Y_adjusted.columns
-    if np.all(np.isnan(w)):
+    if b == False:
         w_df['VTI']    =   0.6
-        w_df['BIL']    =   0.4
+        w_df['BND']    =   0.4
     w_df['date'] = w_df.index
     w_df['date'] = i
     w_df.set_index('date', inplace=True)
