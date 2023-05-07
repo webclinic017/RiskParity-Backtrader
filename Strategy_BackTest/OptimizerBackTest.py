@@ -51,7 +51,7 @@ def optimize_sharpe_ratio(mean_returns, cov_matrix, risk_free_rate=0, w_bounds=(
     init_guess = np.array([1/len(mean_returns) for _ in range(len(mean_returns))])
     args = (mean_returns, cov_matrix, risk_free_rate)
     constraints = ({'type': 'eq', 'fun': lambda x: np.sum(x) - 1},
-                   {'type': 'ineq', 'fun': lambda x: 0.8 - x}
+                   {'type': 'ineq', 'fun': lambda x: 0.6 - x}
                    )
     result = opt.minimize(fun=neg_sharpe_ratio,
                           x0=init_guess,
@@ -155,7 +155,6 @@ def optimizerbacktest(Y_adjusted, trend_df, daily_returns_log):
                                                                                     cov_matrix,
                                                                                     risk_free_rate=0, w_bounds=(0,1))
 
-                    #w = optimize_portfolio(Y_adjusted)
                     weight_concat, w_df, sharpe_array_concat = weightings(w, Y_adjusted, next_month, weight_concat, sharpe_array_concat, 1)
                     Y_adjusted_next_L   = pd.DataFrame(asset_trimmer(pd.DataFrame(trend_df.iloc[row_number+1]), next_month_returns)) #Long
                     w = w_df.drop('sharpe', axis=1)
