@@ -33,7 +33,6 @@ def calc_returns_stats(returns):
     """
     mean_returns = returns.mean()
     cov_matrix = returns.cov()
-    print(mean_returns)
     return(mean_returns, cov_matrix)
 
 def portfolio(weights, mean_returns, cov_matrix):
@@ -52,7 +51,7 @@ def optimize_sharpe_ratio(mean_returns, cov_matrix, risk_free_rate=0, w_bounds=(
     args = (mean_returns, cov_matrix, risk_free_rate)
     constraints =   ({'type': 'eq', 'fun': lambda x: np.sum(x) - 1},
                     {'type': 'ineq', 'fun': lambda x: 0.6 - x},
-                    {'type': 'ineq', 'fun': lambda x: np.sum(x > 0.01) - 3},  # Constraint: at least 3 assets must be invested in
+                    {'type': 'ineq', 'fun': lambda x: np.sum(x > 0) - 3}  # Constraint: at least 3 assets must be invested in
                    )
     result = opt.minimize(fun=neg_sharpe_ratio,
                           x0=init_guess,
@@ -60,6 +59,7 @@ def optimize_sharpe_ratio(mean_returns, cov_matrix, risk_free_rate=0, w_bounds=(
                           method='SLSQP',
                           bounds=tuple(w_bounds for _ in range(len(mean_returns))),
                           constraints=constraints,
+                          options={'maxiter': 1000},
                           )
     
     if result['success']:
@@ -67,12 +67,17 @@ def optimize_sharpe_ratio(mean_returns, cov_matrix, risk_free_rate=0, w_bounds=(
         opt_sharpe = - result['fun']
         opt_weights = result['x']
         opt_return, opt_variance, opt_std = portfolio(opt_weights, mean_returns, cov_matrix)
-        print(opt_sharpe)
-        return(opt_sharpe, opt_weights, opt_return.item()*252, opt_variance.item()*252, opt_std.item()*(252**0.5))
+        b = True
+        return(opt_sharpe, opt_weights, opt_return.item()*252, opt_variance.item()*252, opt_std.item()*(252**0.5), b)
     else:
         print("Optimization was not succesfull!")
         print(result['message'])
-        return(None)
+
+        opt_weights = [0.6,0.4]
+        opt_sharpe = opt_return = opt_variance = opt_std = [0]
+
+        b = False
+        return(opt_sharpe, opt_weights, opt_return, opt_variance, opt_std, b)
 
 
 
@@ -139,9 +144,12 @@ def optimizerbacktest(Y_adjusted, trend_df, daily_returns_log):
             #Split my df into current and next month, current for calculating the portfolio, and next for the backtest.
             current_month_returns = daily_returns_log[(daily_returns_log.index.month == index.month) & (daily_returns_log.index.year == index.year)]
             next_month_returns = daily_returns_log[(daily_returns_log.index.month == next_month.month) & (daily_returns_log.index.year == next_month.year)]
+            start_cur   = current_month_returns.index[0]
+            end_cur     = current_month_returns.index[-1]
 
             if row_number != stopper:
-
+                start_next  = next_month_returns.index[0]
+                end_next    = next_month_returns.index[-1]
                 #This is my trend tracker df, and we adjust the returns and next returns later on by this to select only trending assets.
                 trend_df_2 = pd.DataFrame(trend_df.iloc[row_number+1])
                 Y_adjusted = asset_trimmer(trend_df_2.T, current_month_returns)
@@ -151,10 +159,18 @@ def optimizerbacktest(Y_adjusted, trend_df, daily_returns_log):
                     mean_returns, cov_matrix = calc_returns_stats(Y_adjusted)
 
                     # max sharpe portfolio
-                    opt_sharpe, w, opt_return, opt_variance, opt_std = optimize_sharpe_ratio(
+                    opt_sharpe, w, opt_return, opt_variance, opt_std, b = optimize_sharpe_ratio(
                                                                                     mean_returns,
                                                                                     cov_matrix,
                                                                                     risk_free_rate=0, w_bounds=(0,1))
+                    if b == False:
+                        print("Failed")
+                        w = [0.6,0.4]
+                        Y_adjusted = pd.DataFrame()
+                        Y_adjusted['VTI'] = yf.download("VTI", start=start_cur, end=end_cur)['Adj Close'].pct_change()
+                        Y_adjusted['BND'] = yf.download("BND", start=start_cur, end=end_cur)['Adj Close'].pct_change()
+                        Y_adjusted_next_L['VTI'] = yf.download("VTI", start=start_next, end=end_next)['Adj Close'].pct_change()
+                        Y_adjusted_next_L['BND'] = yf.download("BND", start=start_next, end=end_next)['Adj Close'].pct_change()
 
                     weight_concat, w_df, sharpe_array_concat = weightings(w, Y_adjusted, next_month, weight_concat, sharpe_array_concat, 1)
                     Y_adjusted_next_L   = pd.DataFrame(asset_trimmer(pd.DataFrame(trend_df.iloc[row_number+1]), next_month_returns)) #Long
