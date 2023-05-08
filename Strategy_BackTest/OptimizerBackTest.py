@@ -166,7 +166,7 @@ def optimizerbacktest(Y_adjusted, trend_df, daily_returns_log):
                     if b == False:
                         print("Failed")
                         data = np.array([[0.6, 0.4, 1]])
-
+                        print(start_next_month)
                         w = pd.DataFrame(data,
                         columns=['VTI', 'BND', 'sharpe'])
                         Y_adjusted = pd.DataFrame()
@@ -178,7 +178,8 @@ def optimizerbacktest(Y_adjusted, trend_df, daily_returns_log):
                         Y_adjusted_next_L['BND'] = yf.download("BND", start=start_next_month, end=end_next)['Adj Close'].pct_change().dropna()* 0.4
                     else:
                         Y_adjusted_next_L   = pd.DataFrame(asset_trimmer(pd.DataFrame(trend_df.iloc[row_number+1]), next_month_returns)) #Long
-                        weight_concat, w, sharpe_array_concat = weightings(w, Y_adjusted, next_month, weight_concat, sharpe_array_concat, 1, b)
+                   
+                    weight_concat, w, sharpe_array_concat = weightings(w, Y_adjusted, next_month, weight_concat, sharpe_array_concat, 1, b)
 
                     w = w.drop('sharpe', axis=1)
                     for col in w:
