@@ -160,7 +160,7 @@ def optimizerbacktest(Y_adjusted, trend_df, daily_returns_log):
 
                     # max sharpe portfolio
                     opt_sharpe, w, opt_return, opt_variance, opt_std, b = optimize_sharpe_ratio(
-                                                  a                                  mean_returns,
+                                                                                    mean_returns,
                                                                                     cov_matrix,
                                                                                     risk_free_rate=0, w_bounds=(0,1))
                     if b == False:
