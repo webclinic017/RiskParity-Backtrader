@@ -166,9 +166,12 @@ def optimizerbacktest(Y_adjusted, trend_df, daily_returns_log):
                     if b == False:
                         print("Failed")
                         data = np.array([[0.6, 0.4, 1]])
-                        print(start_next_month)
+                        next_month  = start_next_month.month
+                        next_year   = start_next_month.year
+                        start_next_month = pd.to_datetime(datetime(next_year, next_month, 1))
                         w = pd.DataFrame(data,
                         columns=['VTI', 'BND', 'sharpe'])
+                        w.index = [start_next_month]
                         Y_adjusted = pd.DataFrame()
                         Y_adjusted_next_L = pd.DataFrame()
                         Y_adjusted['VTI'] = yf.download("VTI", start=start_cur, end=end_cur)['Adj Close'].pct_change()
@@ -178,10 +181,10 @@ def optimizerbacktest(Y_adjusted, trend_df, daily_returns_log):
                         Y_adjusted_next_L['BND'] = yf.download("BND", start=start_next_month, end=end_next)['Adj Close'].pct_change().dropna()* 0.4
                     else:
                         Y_adjusted_next_L   = pd.DataFrame(asset_trimmer(pd.DataFrame(trend_df.iloc[row_number+1]), next_month_returns)) #Long
-                   
-                    weight_concat, w, sharpe_array_concat = weightings(w, Y_adjusted, next_month, weight_concat, sharpe_array_concat, 1, b)
+                        weight_concat, w, sharpe_array_concat = weightings(w, Y_adjusted, next_month, weight_concat, sharpe_array_concat, 1, b)
 
                     w = w.drop('sharpe', axis=1)
+                    print(w)
                     for col in w:
                         new_df = pd.DataFrame(w[col].values * Y_adjusted_next_L[col], columns=[col])
                         portfolio_return.index = new_df.index
