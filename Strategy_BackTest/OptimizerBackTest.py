@@ -148,7 +148,7 @@ def optimizerbacktest(Y_adjusted, trend_df, daily_returns_log):
             end_cur     = current_month_returns.index[-1]
 
             if row_number != stopper:
-                start_next  = next_month_returns.index[0]
+                start_next_month  = next_month_returns.index[0]
                 end_next    = next_month_returns.index[-1]
                 #This is my trend tracker df, and we adjust the returns and next returns later on by this to select only trending assets.
                 trend_df_2 = pd.DataFrame(trend_df.iloc[row_number+1])
@@ -160,25 +160,27 @@ def optimizerbacktest(Y_adjusted, trend_df, daily_returns_log):
 
                     # max sharpe portfolio
                     opt_sharpe, w, opt_return, opt_variance, opt_std, b = optimize_sharpe_ratio(
-                                                                                    mean_returns,
+                                                  a                                  mean_returns,
                                                                                     cov_matrix,
                                                                                     risk_free_rate=0, w_bounds=(0,1))
                     if b == False:
                         print("Failed")
-                        w = [0.6,0.4]
-                        Y_adjusted = Y_adjusted_next_L = pd.DataFrame()
-                        print(start_next, end_next)
+                        data = np.array([[0.6, 0.4, 1]])
+
+                        w = pd.DataFrame(data,
+                        columns=['VTI', 'BND', 'sharpe'])
+                        Y_adjusted = pd.DataFrame()
+                        Y_adjusted_next_L = pd.DataFrame()
                         Y_adjusted['VTI'] = yf.download("VTI", start=start_cur, end=end_cur)['Adj Close'].pct_change()
                         Y_adjusted['BND'] = yf.download("BND", start=start_cur, end=end_cur)['Adj Close'].pct_change()
-                        Y_adjusted_next_L['VTI'] = yf.download("VTI", start=start_next, end=end_next)['Adj Close'].pct_change()
-                        Y_adjusted_next_L['BND'] = yf.download("BND", start=start_next, end=end_next)['Adj Close'].pct_change()
-                        print(Y_adjusted_next_L)
+                        Y_adjusted_next_L["VTI"] = yf.download("VTI", start=start_next_month, end=end_next)['Adj Close'].pct_change().dropna()* 0.6
+
+                        Y_adjusted_next_L['BND'] = yf.download("BND", start=start_next_month, end=end_next)['Adj Close'].pct_change().dropna()* 0.4
                     else:
                         Y_adjusted_next_L   = pd.DataFrame(asset_trimmer(pd.DataFrame(trend_df.iloc[row_number+1]), next_month_returns)) #Long
+                        weight_concat, w, sharpe_array_concat = weightings(w, Y_adjusted, next_month, weight_concat, sharpe_array_concat, 1, b)
 
-                    weight_concat, w_df, sharpe_array_concat = weightings(w, Y_adjusted, next_month, weight_concat, sharpe_array_concat, 1, b)
-
-                    w = w_df.drop('sharpe', axis=1)
+                    w = w.drop('sharpe', axis=1)
                     for col in w:
                         new_df = pd.DataFrame(w[col].values * Y_adjusted_next_L[col], columns=[col])
                         portfolio_return.index = new_df.index
