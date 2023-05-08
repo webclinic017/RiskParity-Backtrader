@@ -51,7 +51,7 @@ def optimize_sharpe_ratio(mean_returns, cov_matrix, risk_free_rate=0, w_bounds=(
     args = (mean_returns, cov_matrix, risk_free_rate)
     constraints =   ({'type': 'eq', 'fun': lambda x: np.sum(x) - 1},
                     {'type': 'ineq', 'fun': lambda x: 0.5 - x},
-                    {'type': 'ineq', 'fun': lambda x: np.sum(x > 0) - 3}  # Constraint: at least 3 assets must be invested in
+                    {'type': 'ineq', 'fun': lambda x: np.sum(x > 0.1) - 3}  # Constraint: at least 3 assets must be invested in
                    )
     result = opt.minimize(fun=neg_sharpe_ratio,
                           x0=init_guess,
