@@ -206,11 +206,16 @@ assets        = assets.reset_index(drop=True)
 df_2 = pd.DataFrame(columns = assets['Asset'].to_list())
 weight_concat = weight_concat.reindex(columns=df_2.columns)
 
-bonds           = assets[assets['Industry'] == 'Bonds'].index.min()
-metals          = assets[assets['Industry'] == 'Metals']
-defense         = assets[assets['Industry'] == 'Defense']
-Housing         = assets[assets['Industry'] == 'Housing']
-equities        = assets[assets['Industry'] == 'Equities']
-commodities     = assets[assets['Industry'] == 'Commodities']
+asset_pick = assets['Industry'].to_list()
+print(asset_pick)
+Bonds       = asset_pick.index("Bonds")
+Equities    = asset_pick.index("Equities")
+Metals      = asset_pick.index("Metals")
+Commodities = asset_pick.index("Commodities")
+Energies    = asset_pick.index("Energies")
+Housing     = asset_pick.index("Housing")
+Defense     = asset_pick.index("Defense")
 
-print(bonds)
+
+
+print(Defense)
