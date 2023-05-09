@@ -5,11 +5,12 @@ import plotly.graph_objs as go
 from Utils import *
 from Trend_Following import *
 import numpy as np
+import dash_table
 import dash
 import dash_core_components as dcc
 from dash import html
 from Utils import bench
-from OptimizerBackTest import portfolio_return_concat, portfolio_return_concat, weight_concat, asset_classes, sharpe_array_concat
+from OptimizerBackTest import portfolio_return_concat, portfolio_return_concat, weight_concat, asset_classes, sharpe_array_concat, bonds, commodities, defense, leng, energies, equities, housing, metals
 
 warnings.filterwarnings("ignore")
 
@@ -17,6 +18,7 @@ benchmark = 'Bench_Return'
 Bench, merged_df = bench(portfolio_return_concat.index.min(), benchmark, portfolio_return_concat)
 
 weight_concat, this_month_weight = output_mgmt(weight_concat)
+weight_concat.dropna()
 
 def correlation_matrix(sharpe_array, column):
     corr_matrix = sharpe_array.corr()
@@ -40,7 +42,7 @@ def generate_weights_table(weights_df, asset_classes):
     weight_long = long_names(asset_classes, weights_df)
     weights_df2 = weights_df.copy()
     weights_df, weight_long = df_merger(weights_df, weight_long)
-
+    col_num = 1
 
     weights_table = html.Table(
         style={'border': '1px solid black', 'padding': '10px'},
@@ -62,7 +64,7 @@ def generate_weights_table(weights_df, asset_classes):
             *[html.Tr(
                 children=[
                     html.Td(index, style={'font-weight': 'bold',                # Left index
-                                          'border': '1px solid black',
+                                          'border': '1px solid black' + ('red' if col_num <= 5 else 'grey'),
                                           'padding': '1px',
                                           'font-family': 'Arial',
                                           'font-size': '14px',}),
@@ -79,10 +81,59 @@ def generate_weights_table(weights_df, asset_classes):
                                        else 'white',
                                        },
                                        title=col,
-                                ) for col in weights_df.columns],
+                                ) for col_num,col in enumerate(weights_df.columns, start=1)],
                 ]
             ) for index in weights_df.index.strftime('%Y-%m-%d')]
         ]
+    )
+    return weights_table
+
+def generate_weights_table_table(weights_df, asset_classes, ider):
+    weight_long = long_names(asset_classes, weights_df)
+    weights_df2 = weights_df.copy()
+    weights_df, weight_long = df_merger(weights_df, weight_long)
+    weights_df2 = weights_df2.round(3)
+    weights_df2['Index'] = weights_df2.index
+    weights_df2['Index'] = pd.to_datetime(weights_df2['Index'])
+    weights_df2['Index'] = weights_df2['Index'].dt.strftime('%Y-%m-%d')
+
+    weights_df2 = weights_df2[['Index'] + [col for col in weights_df2.columns if col != 'Index']]
+    weights_table = dash_table.DataTable(
+        id = ider,
+        data=weights_df2.to_dict('records'),
+        columns=[{'name': col, 'id': col} for col in weights_df2.columns],
+        tooltip_data=[{weights_df2.columns[i+1]: {'value': str(weight_long.columns[i]),'type': 'markdown'}
+                for i, column in enumerate(weights_df2.columns[1:])  # Exclude the first column
+            }
+            for _ in weights_df2.iterrows()
+        ],
+        tooltip_delay=0,
+        tooltip_duration=None,
+        style_cell={'font-family': 'Arial', 'font-size': '12px', 'font-color':'black'},
+        style_header={'background-color': 'grey', 'color': 'white','font-size': '16px', 'font-family': 'Arial', 'font-size': '10px','fontColor':'black', 'fontWeight': 'bold'},
+        style_table = {'overflowX': 'auto',
+            'border': '1px solid grey',
+            'borderRadius': '5px',
+            'padding': '5px'
+        },
+        style_data_conditional=
+            [{'if': {'column_id': col},'border': '1px solid magenta',}for col in weights_df2.columns[bonds+1:commodities+1]] +
+            [{'if': {'column_id': col},'border': '1px solid brown',}for col in weights_df2.columns[commodities+1:defense+1]] + 
+            [{'if': {'column_id': col},'border': '1px solid grey',}for col in weights_df2.columns[defense+1:energies+1]] + 
+            [{'if': {'column_id': col},'border': '1px solid orange',}for col in weights_df2.columns[energies+1:equities+1]] + 
+            [{'if': {'column_id': col},'border': '1px solid green',}for col in weights_df2.columns[equities+1:housing+1]] + 
+            [{'if': {'column_id': col},'border': '1px solid brown',}for col in weights_df2.columns[housing+1:metals+1]] + 
+            [{'if': {'column_id': col},'border': '1px solid gold',}for col in weights_df2.columns[metals+1:leng+1]]+
+            [{'if': {'column_id': col, 'filter_query': '{{{}}} > 0.05'.format(col)}, 'backgroundColor': '#D6FF97', 'color': 'black'}
+            for col in weights_df2.columns] + 
+            [{'if': {'column_id': col, 'filter_query': '{{{}}} > 0.1'.format(col)}, 'backgroundColor': '#6FD17A', 'color': 'black'}
+            for col in weights_df2.columns] + 
+            [{'if': {'column_id': col, 'filter_query': '{{{}}} > 0.2'.format(col)}, 'backgroundColor': '#9ACD32', 'color': 'black'}
+            for col in weights_df2.columns] + 
+            [{'if': {'column_id': col, 'filter_query': '{{{}}} > 0.5'.format(col)}, 'backgroundColor': '#0DBF00', 'color': 'black'}
+            for col in weights_df2.columns] +        
+            [{'if': {'column_id': col}, 'textAlign': 'center'}
+            for col in weights_df2.columns]
     )
     return weights_table
 
@@ -209,7 +260,7 @@ def portfolio_returns_app(returns_df, weights_df, this_month_weight, Bench, shar
                 html.Td(str(round(float(last_month_sharpe_ratio_bench), 4)))
             ])
         ])
-       
+
     app = dash.Dash(__name__)
 
     app.layout = html.Div(children=[
@@ -221,11 +272,11 @@ def portfolio_returns_app(returns_df, weights_df, this_month_weight, Bench, shar
     ),
     html.H2(children='Weights'),
 
-    generate_weights_table(weights_df, asset_classes),
+    generate_weights_table_table(weights_df, asset_classes, 'weights'),
 
     html.H2(children="Next Month Weights"),
     
-    generate_weights_table(this_month_weight, asset_classes),
+    generate_weights_table_table(this_month_weight, asset_classes, 'nmweights'),
 
     html.H2(children='Summary Statistics', style={'font-size': '24px'}),
     returns_table,
