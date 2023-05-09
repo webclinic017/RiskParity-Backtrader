@@ -208,14 +208,11 @@ weight_concat = weight_concat.reindex(columns=df_2.columns)
 
 asset_pick = assets['Industry'].to_list()
 print(asset_pick)
-Bonds       = asset_pick.index("Bonds")
-Equities    = asset_pick.index("Equities")
-Metals      = asset_pick.index("Metals")
-Commodities = asset_pick.index("Commodities")
-Energies    = asset_pick.index("Energies")
-Housing     = asset_pick.index("Housing")
-Defense     = asset_pick.index("Defense")
-
-
-
-print(Defense)
+equities    = asset_pick.index("Equities")
+metals      = asset_pick.index("Metals")
+commodities = asset_pick.index("Commodities")
+energies    = asset_pick.index("Energies")
+housing     = asset_pick.index("Housing")
+defense     = asset_pick.index("Defense")
+bonds     = asset_pick.index("Bonds")
+print(equities)
