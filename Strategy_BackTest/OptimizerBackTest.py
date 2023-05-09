@@ -14,7 +14,7 @@ print(Start)
 
 #from Trend_Following import * #Start, End, ret, dummy_L_df, months_between, next_month
 
-monthly_returns, asset_classes, asset = data_management(Start, End, '1mo')
+monthly_returns, asset_classes, asset, assets = data_management(Start, End, '1mo')
 #daily_returns, asset_classes, asset = data_management(Start, End, '1d')
 monthly_returns = monthly_returns.dropna()
 
@@ -201,4 +201,4 @@ def optimizerbacktest(Y_adjusted, trend_df, daily_returns_log):
 
 portfolio_return_concat, weight_concat, sharpe_array_concat = optimizerbacktest(monthly_returns_log, dummy_L_df, daily_returns_log)
 weight_concat = weight_concat.sort_index(axis=1)
-print(weight_concat, asset_classes)
+print(assets)

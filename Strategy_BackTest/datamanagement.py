@@ -19,6 +19,7 @@ def data_management(start, end, int):
     asset_classes = asset_classes.sort_values(by=['Asset'])
     asset = assets['Asset'].values.tolist()
     asset = list(set(asset))
+
     asset = [x for x in asset if str(x) != 'nan']
 
     df_list = []
@@ -33,4 +34,4 @@ def data_management(start, end, int):
     asset_classes = asset_classes[valid_assets]
     asset_classes = pd.DataFrame(asset_classes)
     asset_classes = asset_classes.sort_values(by=['Asset'])
-    return returns, asset_classes, asset
+    return returns, asset_classes, asset, assets
