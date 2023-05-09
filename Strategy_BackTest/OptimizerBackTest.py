@@ -10,6 +10,8 @@ from datamanagement import *
 from Trend_Following import dummy_L_df, ret as daily_returns, asset_classes, asset
 warnings.filterwarnings("ignore")
 
+print(Start)
+
 #from Trend_Following import * #Start, End, ret, dummy_L_df, months_between, next_month
 
 monthly_returns, asset_classes, asset = data_management(Start, End, '1mo')
@@ -51,7 +53,7 @@ def optimize_sharpe_ratio(mean_returns, cov_matrix, risk_free_rate=0, w_bounds=(
     args = (mean_returns, cov_matrix, risk_free_rate)
     constraints =   ({'type': 'eq', 'fun': lambda x: np.sum(x) - 1},
                     {'type': 'ineq', 'fun': lambda x: 0.5 - x},
-                    {'type': 'ineq', 'fun': lambda x: np.sum(x > 0.01) - 3}  # 0.05 and 3 looks good
+                    {'type': 'ineq', 'fun': lambda x: np.sum(x > 0.01) - 3}  # x > 0.01) - 3 looks good
                    )
     result = opt.minimize(fun=neg_sharpe_ratio,
                           x0=init_guess,
@@ -178,6 +180,11 @@ def optimizerbacktest(Y_adjusted, trend_df, daily_returns_log):
                         Y_adjusted_next_L["VTI"] = yf.download("VTI", start=start_next_month, end=end_next)['Adj Close'].pct_change().dropna()#* 0.6
                         Y_adjusted_next_L['BND'] = yf.download("BND", start=start_next_month, end=end_next)['Adj Close'].pct_change().dropna()#* 0.4
                         weight_concat = pd.concat([weight_concat, w]).fillna(0)
+                        opt_sharpe = (daily_returns.mean() - 0.04) / daily_returns.std()
+                        sharpe_array = w
+                        sharpe_array['sharpe'] = opt_sharpe
+                        sharpe_array_concat = pd.concat([sharpe_array_concat, sharpe_array]).fillna(0)
+
                     else:
                         Y_adjusted_next_L   = pd.DataFrame(asset_trimmer(pd.DataFrame(trend_df.iloc[row_number+1]), next_month_returns)) #Long
                         weight_concat, w, sharpe_array_concat = weightings(w, Y_adjusted, next_month, weight_concat, sharpe_array_concat, 1, b)
@@ -193,5 +200,5 @@ def optimizerbacktest(Y_adjusted, trend_df, daily_returns_log):
     return portfolio_return_concat, weight_concat, sharpe_array_concat
 
 portfolio_return_concat, weight_concat, sharpe_array_concat = optimizerbacktest(monthly_returns_log, dummy_L_df, daily_returns_log)
-
-print(weight_concat['VTI'])
+weight_concat = weight_concat.sort_index(axis=1)
+print(weight_concat, asset_classes)

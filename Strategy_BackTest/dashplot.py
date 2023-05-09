@@ -14,9 +14,7 @@ from OptimizerBackTest import portfolio_return_concat, portfolio_return_concat, 
 warnings.filterwarnings("ignore")
 
 benchmark = 'Bench_Return'
-
 Bench, merged_df = bench(portfolio_return_concat.index.min(), benchmark, portfolio_return_concat)
-
 
 weight_concat, this_month_weight = output_mgmt(weight_concat)
 
@@ -42,6 +40,8 @@ def generate_weights_table(weights_df, asset_classes):
     weight_long = long_names(asset_classes, weights_df)
     weights_df2 = weights_df.copy()
     weights_df, weight_long = df_merger(weights_df, weight_long)
+
+
     weights_table = html.Table(
         style={'border': '1px solid black', 'padding': '10px'},
         children=[
@@ -246,7 +246,7 @@ def portfolio_returns_app(returns_df, weights_df, this_month_weight, Bench, shar
         ], style={'flex': '1'})
                 
     ])
-        ])
+    ])
 
     return app
 
