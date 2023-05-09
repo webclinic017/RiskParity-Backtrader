@@ -9,7 +9,7 @@ from Utils import Start, End
 def data_management(start, end, int):
     holdings_url = "https://github.com/ra6it/RiskParity/blob/main/RiskParity_Holdings_Constraints.xlsx?raw=true"
     holdings_url = requests.get(holdings_url, verify=False).content
-    assets = pd.read_excel(holdings_url,'Holdings',usecols="A:B", engine='openpyxl')
+    assets = pd.read_excel(holdings_url,'Holdings',usecols="A:C", engine='openpyxl')
     assets = assets.reindex(columns=['Asset', 'Full_name', 'Industry'])
     asset_classes = {'Asset': assets['Asset'].values.tolist(), 
                      'Industry': assets['Industry'].values.tolist(),

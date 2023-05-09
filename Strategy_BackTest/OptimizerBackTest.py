@@ -201,4 +201,16 @@ def optimizerbacktest(Y_adjusted, trend_df, daily_returns_log):
 
 portfolio_return_concat, weight_concat, sharpe_array_concat = optimizerbacktest(monthly_returns_log, dummy_L_df, daily_returns_log)
 weight_concat = weight_concat.sort_index(axis=1)
-print(assets)
+assets        = assets.sort_values(by=['Industry', 'Asset'], key=lambda x: x.str.lower())
+assets        = assets.reset_index(drop=True)
+df_2 = pd.DataFrame(columns = assets['Asset'].to_list())
+weight_concat = weight_concat.reindex(columns=df_2.columns)
+
+bonds           = assets[assets['Industry'] == 'Bonds'].index.min()
+metals          = assets[assets['Industry'] == 'Metals']
+defense         = assets[assets['Industry'] == 'Defense']
+Housing         = assets[assets['Industry'] == 'Housing']
+equities        = assets[assets['Industry'] == 'Equities']
+commodities     = assets[assets['Industry'] == 'Commodities']
+
+print(bonds)
