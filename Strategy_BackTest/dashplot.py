@@ -102,19 +102,25 @@ def generate_weights_table_table(weights_df, asset_classes, ider):
         id = ider,
         data=weights_df2.to_dict('records'),
         columns=[{'name': col, 'id': col} for col in weights_df2.columns],
-        tooltip_data=[{weights_df2.columns[i+1]: {'value': str(weight_long.columns[i]),'type': 'markdown'}
+        tooltip_data=[{weights_df2.columns[i+1]: {'value': str(weight_long.columns[i] + " (" + weights_df2.columns[i+1] + ")"),'type': 'markdown'}
                 for i, column in enumerate(weights_df2.columns[1:])  # Exclude the first column
             }
             for _ in weights_df2.iterrows()
         ],
+        css=[{
+        'selector': '.dash-table-tooltip',
+        'rule': 'background-color: lightgrey; font-family: monospace; color: black, width: 10px; height: 50px'
+        }],
         tooltip_delay=0,
         tooltip_duration=None,
-        style_cell={'font-family': 'Arial', 'font-size': '12px', 'font-color':'black'},
-        style_header={'background-color': 'grey', 'color': 'white','font-size': '16px', 'font-family': 'Arial', 'font-size': '10px','fontColor':'black', 'fontWeight': 'bold'},
+        style_cell={'font-family': 'Arial', 'font-size': '10px', 'font-color':'black', 'minWidth': '1px', 'width': '2px', 'maxWidth': '2px'},
+        fixed_rows={'headers': True},
+        style_header={'position': 'sticky','top': '0','background-color': 'grey', 'color': 'white','font-size': '16px', 'font-family': 'Arial', 'font-size': '10px','fontColor':'black', 'fontWeight': 'bold'},
         style_table = {'overflowX': 'auto',
-            'border': '1px solid grey',
-            'borderRadius': '5px',
-            'padding': '5px'
+                        'overflowY': 'scroll',
+                        'border': '1px solid grey',
+                        'borderRadius': '5px',
+                        'padding': '5px'
         },
         style_data_conditional=
             [{'if': {'column_id': col},'border': '1px solid magenta',}for col in weights_df2.columns[bonds+1:commodities+1]] +
@@ -132,9 +138,8 @@ def generate_weights_table_table(weights_df, asset_classes, ider):
             for col in weights_df2.columns] + 
             [{'if': {'column_id': col, 'filter_query': '{{{}}} > 0.5'.format(col)}, 'backgroundColor': '#0DBF00', 'color': 'black'}
             for col in weights_df2.columns] +        
-            [{'if': {'column_id': col}, 'textAlign': 'center'}
-            for col in weights_df2.columns]
-    )
+            [{'if': {'column_id': col}, 'textAlign': 'center'} for col in weights_df2.columns]+
+            [{'if': {'column_id': weights_df2.columns[0]},'fontWeight': 'bold', 'font-size': '10px', 'minWidth': '10px', 'maxWidth': '10px'}])
     return weights_table
 
 def portfolio_data(df, col, num_days, average_number_days):
