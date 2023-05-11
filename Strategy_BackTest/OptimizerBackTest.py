@@ -10,8 +10,6 @@ from datamanagement import *
 from Trend_Following import dummy_L_df, ret as daily_returns, asset_classes, asset
 warnings.filterwarnings("ignore")
 
-print(Start)
-
 #from Trend_Following import * #Start, End, ret, dummy_L_df, months_between, next_month
 
 monthly_returns, asset_classes, asset, assets = data_management(Start, End, '1mo')
@@ -218,3 +216,11 @@ metals      = asset_pick.index("Metals")
 
 print(type(metals))
 leng         = len(asset_pick)
+
+print(portfolio_return_concat.var())
+benchmark = 'hello'
+Bench, merged_df = bench(portfolio_return_concat.index.min(), benchmark, portfolio_return_concat)
+
+
+print("back")
+pf.create_returns_tear_sheet(merged_df, live_start_date=Start)

@@ -4,6 +4,7 @@ import requests
 from calendar import monthrange
 from scipy.optimize import minimize
 from Utils import Start, End
+
 ##
 
 def data_management(start, end, int):
