@@ -4,8 +4,6 @@ from datetime import datetime
 from datamanagement import *
 import numpy as np
 from datetime import date
-from dateutil.relativedelta import relativedelta
-import matplotlib.pyplot as plt
 from Utils import Start, End
 
 number_of_iter = 1000

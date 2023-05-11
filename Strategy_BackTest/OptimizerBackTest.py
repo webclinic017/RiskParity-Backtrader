@@ -223,4 +223,3 @@ Bench, merged_df = bench(portfolio_return_concat.index.min(), benchmark, portfol
 
 
 print("back")
-pf.create_returns_tear_sheet(merged_df, live_start_date=Start)
