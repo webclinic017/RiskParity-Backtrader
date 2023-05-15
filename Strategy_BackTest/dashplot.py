@@ -10,12 +10,11 @@ import dash
 import dash_core_components as dcc
 from dash import html
 from Utils import bench
-from OptimizerBackTest import portfolio_return_concat, weight_concat, asset_classes, sharpe_array_concat, bonds, commodities, defense, leng, energies, equities, housing, metals
+from OptimizerBackTest import old_sharpe, Merged_df, Port_sh, Bench,  Bench_sh, portfolio_return_concat, weight_concat, asset_classes, sharpe_array_concat, bonds, commodities, defense, leng, energies, equities, housing, metals
 
 warnings.filterwarnings("ignore")
 
 benchmark = 'Bench_Return'
-Bench, merged_df = bench(portfolio_return_concat.index.min(), benchmark, portfolio_return_concat)
 
 weight_concat, this_month_weight = output_mgmt(weight_concat)
 weight_concat.dropna()
@@ -139,20 +138,13 @@ def frontier_chart(vol_arr, ret_arr, sharpe_arr, selected_index):
 
 def portfolio_returns_app(returns_df, weights_df, this_month_weight, Bench, sharpe_array, portfolio_return_concat):
     num_years = (returns_df.index.max() - returns_df.index.min()).days / 365
-    print(num_years)
     num_days = len(returns_df)
-    print(num_days)
     average_number_days = num_days/num_years
-    print(average_number_days)
     returns = returns_df.pct_change()
     bench_pct = Bench.pct_change()
     bench_pct.dropna(inplace=True)
     returns.dropna(inplace=True)
-    Portfolio_Net_Returns, Portfolio_std, Portfolio_Sharpe_Ratio = portfolio_data(returns_df, 'portfolio_return', num_days, average_number_days, portfolio_return_concat)
-    last_month_sharpe_ratio = last_month_data(returns, 'portfolio_return')
-    Bench_Net_Returns, Bench_std, Bench_Sharpe_Ratio = portfolio_data(Bench, f'{benchmark}', num_days, average_number_days, bench_pct)
-    last_month_sharpe_ratio_bench = last_month_data(Bench.pct_change(), f'{benchmark}')
- 
+    
     fig = go.Figure()
 
     returns_df = returns_df.sort_index(ascending=False)
@@ -199,28 +191,13 @@ def portfolio_returns_app(returns_df, weights_df, this_month_weight, Bench, shar
             ]),
             html.Tr(children=[
                 html.Td('Net Returns'),
-                html.Td(round(Portfolio_Net_Returns, 4)),
-                html.Td(round(Bench_Net_Returns, 4)),
+                html.Td(round((Merged_df.iloc[-1]-10000)/10000, 4)),
+                html.Td(round((Bench.iloc[-1]-10000)/10000, 4)),
             ]),
             html.Tr(children=[
                 html.Td('Avg Yr Returns'),
-                html.Td(round(Portfolio_Net_Returns / num_years, 4)),
-                html.Td(round(Bench_Net_Returns / num_years, 4))
-            ]),
-            html.Tr(children=[
-                html.Td('Std Returns'),
-                html.Td(round(Portfolio_std, 4)),
-                html.Td(round(Bench_std, 4))
-            ]),
-            html.Tr(children=[
-                html.Td('Sharpe Ratio'),
-                html.Td(str(round(Portfolio_Sharpe_Ratio, 4))),
-                html.Td(str(round(Bench_Sharpe_Ratio, 4)))
-            ]),
-            html.Tr(children=[
-                html.Td('L/M sharpe Ratio'),
-                html.Td(str(round(float(last_month_sharpe_ratio), 4))),
-                html.Td(str(round(float(last_month_sharpe_ratio_bench), 4)))
+                html.Td(round((Merged_df.iloc[-1]-10000)/10000 / num_years, 4)),
+                html.Td(round((Bench.iloc[-1]-10000)/10000 / num_years, 4))
             ])
         ])
 
@@ -264,7 +241,7 @@ def portfolio_returns_app(returns_df, weights_df, this_month_weight, Bench, shar
 
     return app
 
-app = portfolio_returns_app(merged_df, weight_concat, this_month_weight, Bench, sharpe_array_concat, portfolio_return_concat)
+app = portfolio_returns_app(Merged_df, weight_concat, this_month_weight, Bench, sharpe_array_concat, portfolio_return_concat)
 app.run_server(debug=False)
 
 
