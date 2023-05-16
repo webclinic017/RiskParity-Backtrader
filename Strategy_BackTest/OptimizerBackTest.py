@@ -8,10 +8,13 @@ import warnings
 from dateutil.relativedelta import relativedelta
 from datamanagement import *
 import quantstats as qs
+from newdash import max_weight, n_More
 from Trend_Following import dummy_L_df, ret as daily_returns, asset_classes, asset
 warnings.filterwarnings("ignore")
 
 #from Trend_Following import * #Start, End, ret, dummy_L_df, months_between, next_month
+
+#Parameters:
 
 monthly_returns, asset_classes, asset, assets = data_management(Start, End, '1mo')
 #daily_returns, asset_classes, asset = data_management(Start, End, '1d')
@@ -47,12 +50,14 @@ def portfolio(weights, mean_returns, cov_matrix):
 
 def optimize_sharpe_ratio(mean_returns, cov_matrix, risk_free_rate=0, w_bounds=(0,1)):
     "This function finds the portfolio weights which minimize the negative sharpe ratio"
+    print("N_More", nmore)
+    print("Max_weight", mweight)
 
     init_guess = np.array([1/len(mean_returns) for _ in range(len(mean_returns))])
     args = (mean_returns, cov_matrix, risk_free_rate)
     constraints =   ({'type': 'eq', 'fun': lambda x: np.sum(x) - 1},
-                    {'type': 'ineq', 'fun': lambda x: 0.5 - x},
-                    {'type': 'ineq', 'fun': lambda x: np.sum(x > 0.01) - 3}  # x > 0.01) - 3 looks good
+                    {'type': 'ineq', 'fun': lambda x: mweight - x},
+                    {'type': 'ineq', 'fun': lambda x: np.sum(x > 0.01) - nmore},  # x > 0.01) - 3 looks good
                    )
     result = opt.minimize(fun=neg_sharpe_ratio,
                           x0=init_guess,
@@ -64,14 +69,12 @@ def optimize_sharpe_ratio(mean_returns, cov_matrix, risk_free_rate=0, w_bounds=(
                           )
     
     if result['success']:
-        print(result['message'])
         opt_sharpe = - result['fun']
         opt_weights = result['x']
         opt_return, opt_variance, opt_std = portfolio(opt_weights, mean_returns, cov_matrix)
         b = True
         return(opt_sharpe, opt_weights, opt_return.item()*252, opt_variance.item()*252, opt_std.item()*(252**0.5), b)
     else:
-        print("Optimization was not succesfull!")
         print(result['message'])
 
         opt_weights = [0.6,0.4]
@@ -80,43 +83,6 @@ def optimize_sharpe_ratio(mean_returns, cov_matrix, risk_free_rate=0, w_bounds=(
         b = False
         return(opt_sharpe, opt_weights, opt_return, opt_variance, opt_std, b)
 
-
-
-### Old optimization method, min variance
-def optimize_portfolio(returns_data):
-    # Number of assets in the portfolio
-    num_assets = len(returns_data.columns)
-
-    # Calculate covariance matrix
-    cov_matrix = returns_data.cov()
-
-    # Set random seed for reproducibility
-
-    # Define optimization function
-    def portfolio_variance(weights):
-        portfolio_variance = np.dot(weights.T, np.dot(cov_matrix, weights))
-        return portfolio_variance
-
-    # Define optimization constraints
-    constraints = (
-    {'type': 'eq', 'fun': lambda x: np.sum(x) - 1},  # Constraint: weights sum to 1
-    )
-
-    # Define optimization bounds
-    bounds = tuple((0, 1) for _ in range(num_assets))  # Bounds: 0 <= weights <= 1
-
-    # Initial guess for weights
-    initial_weights = np.ones(num_assets) / num_assets
-
-    # Perform portfolio optimization
-    result = minimize(portfolio_variance, initial_weights, method='SLSQP', constraints=constraints, bounds=bounds)
-
-    print(result.message)
-
-    # Extract optimized weights
-    optimized_weights = result.x
-
-    return optimized_weights
 
 def ret(monthly_returns):
     monthly_returns_log = monthly_returns.pct_change() #np.log(monthly_returns/monthly_returns.shift(1))
@@ -128,7 +94,7 @@ monthly_returns_log = ret(monthly_returns)
 daily_returns_log   = ret(daily_returns)
 
 
-def optimizerbacktest(Y_adjusted, trend_df, daily_returns_log):
+def optimizerbacktest(Y_adjusted, trend_df, daily_returns_log, N_More, Max_weight):
     weight_concat = sharpe_array_concat = portfolio_return_concat = pd.DataFrame()
     stopper = len(monthly_returns_log)
     monthly_returns_log.index = pd.to_datetime(monthly_returns_log.index)  # Convert index to datetime
@@ -197,97 +163,3 @@ def optimizerbacktest(Y_adjusted, trend_df, daily_returns_log):
                 portfolio_return_concat = pd.concat([portfolio_return_concat, portfolio_return], axis=0) #Long
 
     return portfolio_return_concat, weight_concat, sharpe_array_concat
-
-portfolio_return_concat, weight_concat, sharpe_array_concat = optimizerbacktest(monthly_returns_log, dummy_L_df, daily_returns_log)
-weight_concat = weight_concat.sort_index(axis=1)
-assets        = assets.sort_values(by=['Industry', 'Asset'], key=lambda x: x.str.lower())
-assets        = assets.reset_index(drop=True)
-df_2 = pd.DataFrame(columns = assets['Asset'].to_list())
-weight_concat = weight_concat.reindex(columns=df_2.columns)
-
-asset_pick = assets['Industry'].to_list()
-
-bonds       = asset_pick.index("Bonds")
-commodities = asset_pick.index("Commodities")
-defense     = asset_pick.index("Defense")
-energies    = asset_pick.index("Energies")
-equities    = asset_pick.index("Equities")
-housing     = asset_pick.index("Housing")
-metals      = asset_pick.index("Metals")
-
-leng         = len(asset_pick)
-
-benchmark = 'Benchmark'
-Bench, Merged_df = bench(portfolio_return_concat.index.min(), benchmark, portfolio_return_concat)
-# Old method:
-def old_sharpe(df):
-    Port_ret = ((df.iloc[-1] - 10000)/10000)
-    num_years = (df.index.max() - df.index.min()).days / 365
-    num_days = len(df)
-    average_number_days = num_days/num_years
-    Sharpe_Ratio =  (np.sqrt(average_number_days)*(Port_ret - 0.04) / df.pct_change().std())
-    
-    return Sharpe_Ratio.to_string()
-
-Port_sh = old_sharpe(Merged_df)
-#Bench_sh = old_sharpe(Bench)
-
-
-qs.reports.html(Merged_df.iloc[:,0], Bench.pct_change().iloc[:,0], output='F:/outputs/quantstats-tearsheet.html')
-#qs.reports.html(Merged_df, Bench)
-weight_concat['Index'] = weight_concat.index
-weight_concat['Index'] = pd.to_datetime(weight_concat['Index'])
-weight_concat['Index'] = weight_concat['Index'].dt.strftime('%Y-%m-%d')
-weight_concat.index = weight_concat['Index']
-
-weight_concat = weight_concat.drop('Index', axis=1)
-
-weight_concat = weight_concat.round(2)
-#04B018
-
-column_styles = [
-    {"selector": f".col{idx}", "props": [("border-right", "1px solid magenta"), ("border-left", "1px solid magenta")]}
-    for idx in range(0, bonds)
-] + [
-    {"selector": f".col{idx}", "props": [("border-right", "1px solid brown"), ("border-left", "1px solid brown")]}
-    for idx in range(bonds, commodities)
-] + [
-    {"selector": f".col{idx}", "props": [("border-right", "1px solid grey"), ("border-left", "1px solid grey")]}
-    for idx in range(commodities, defense)
-] + [
-    {"selector": f".col{idx}", "props": [("border-right", "1px solid orange"), ("border-left", "1px solid orange")]}
-    for idx in range(defense, energies)
-] + [
-    {"selector": f".col{idx}", "props": [("border-right", "1px solid green"), ("border-left", "1px solid green")]}
-    for idx in range(energies, equities)
-] + [
-    {"selector": f".col{idx}", "props": [("border-right", "1px solid brown"), ("border-left", "1px solid brown")]}
-    for idx in range(equities, housing)
-] + [
-    {"selector": f".col{idx}", "props": [("border-right", "1px solid gold"), ("border-left", "1px solid gold")]}
-    for idx in range(housing, metals)
-] + [
-    {"selector": f".col{idx}", "props": [("border-right", "1px solid purple"), ("border-left", "1px solid purple")]}
-    for idx in range(metals, leng)
-]+ [
-    {"selector": ".highlight-last-row tr:last-child", "props": [("border", "1px solid black")]}
-]
-
-html_table = (
-    weight_concat.style
-    .applymap(lambda x: (
-        f'background-color: {"#04B018" if x > 0.5 else "#9ACD32" if x > 0.3 else "#6FD17A" if x > 0.1 else "#D6FF97" if x > 0.05 else ""}'
-    ), subset=pd.IndexSlice[:, :])
-    .format("{:.2f}")
-    .set_properties(**{'text-align': 'right'})
-    .set_table_styles(column_styles)
-    .render()
-)
-
-with open(r'C:/Users/Kit/RPVSCode/RiskParity/quantstats-tearsheet.html') as file:
-    html_content = file.read()
-
-modified_content = html_content + html_table
-
-with open('C:/Users/Kit/RPVSCode/RiskParity/quantstats-tearsheet.html','w') as file:
-    file.write(modified_content)
