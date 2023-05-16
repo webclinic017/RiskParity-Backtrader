@@ -269,8 +269,6 @@ column_styles = [
 ] + [
     {"selector": f".col{idx}", "props": [("border-right", "1px solid purple"), ("border-left", "1px solid purple")]}
     for idx in range(metals, leng)
-]+ [
-    {"selector": ".highlight-last-row tr:last-child", "props": [("border", "1px solid black")]}
 ]
 
 html_table = (
