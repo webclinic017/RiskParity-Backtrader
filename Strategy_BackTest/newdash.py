@@ -1,10 +1,25 @@
-from OptimizerBackTest import *
+from OptimizerBackTest import optimizerbacktest, ret
 import quantstats as qs
+from Trend_Following import dummy_L_df, ret as daily_returns, asset_classes, asset
+import pandas as pd
+from datamanagement import *
+from Utils import bench
 
-max_weight  = 0.8
-n_More      = 4
+monthly_returns, asset_classes, asset, assets = data_management(Start, End, '1mo')
 
-portfolio_return_concat, weight_concat, sharpe_array_concat = optimizerbacktest(monthly_returns_log, dummy_L_df, daily_returns_log, n_More, max_weight)
+monthly_returns = monthly_returns.dropna()
+
+monthly_returns_log = ret(monthly_returns)
+daily_returns_log   = ret(daily_returns)
+
+mweight  = 6
+nmore    = 0.2
+
+asset_constraints ={"GOVT": 0.1}
+
+portfolio_return_concat, weight_concat, sharpe_array_concat = optimizerbacktest(daily_returns_log, dummy_L_df, daily_returns_log, nmore, mweight, monthly_returns_log, asset_constraints)
+
+
 weight_concat = weight_concat.sort_index(axis=1)
 assets        = assets.sort_values(by=['Industry', 'Asset'], key=lambda x: x.str.lower())
 assets        = assets.reset_index(drop=True)
@@ -82,5 +97,5 @@ with open(r'C:/Users/Kit/RPVSCode/RiskParity/quantstats-tearsheet.html') as file
 
 modified_content = html_content + html_table
 
-with open('C:/Users/Kit/RPVSCode/RiskParity/quantstats-tearsheet.html','w') as file:
+with open(f'C:/Users/Kit/RPVSCode/RiskParity/outputs/quantstats-tearsheet_nmore.html','w') as file: #({nmore})_maxweight({mweight})
     file.write(modified_content)

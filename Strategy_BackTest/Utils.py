@@ -6,7 +6,7 @@ import numpy as np
 import yfinance as yf
 
 Start = '2019-01-01'
-End = date.today().strftime("%Y-%m-%d")
+End = '2023-05-02' # date.today().strftime("%Y-%m-%d")
 
 date1 = datetime.strptime(Start, "%Y-%m-%d")
 date2 = datetime.strptime(End, "%Y-%m-%d")
