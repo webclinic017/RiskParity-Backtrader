@@ -15,16 +15,9 @@ daily_returns_log   = ret(daily_returns)
 mweight  = 6
 nmore    = 0.2
 
-asset_constraints ={"GOVT": 0.1}
-
-portfolio_return_concat, weight_concat, sharpe_array_concat = optimizerbacktest(daily_returns_log, dummy_L_df, daily_returns_log, nmore, mweight, monthly_returns_log, asset_constraints)
-
-
-weight_concat = weight_concat.sort_index(axis=1)
 assets        = assets.sort_values(by=['Industry', 'Asset'], key=lambda x: x.str.lower())
 assets        = assets.reset_index(drop=True)
 df_2 = pd.DataFrame(columns = assets['Asset'].to_list())
-weight_concat = weight_concat.reindex(columns=df_2.columns)
 
 asset_pick = assets['Industry'].to_list()
 
@@ -35,6 +28,12 @@ energies    = asset_pick.index("Energies")
 equities    = asset_pick.index("Equities")
 housing     = asset_pick.index("Housing")
 metals      = asset_pick.index("Metals")
+
+asset_constraints ={"GOVT": 0.1}
+
+portfolio_return_concat, weight_concat, sharpe_array_concat = optimizerbacktest(daily_returns_log, dummy_L_df, daily_returns_log, nmore, mweight, monthly_returns_log, asset_constraints)
+weight_concat = weight_concat.sort_index(axis=1)
+weight_concat = weight_concat.reindex(columns=df_2.columns)
 
 leng         = len(asset_pick)
 
