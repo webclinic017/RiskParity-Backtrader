@@ -12,7 +12,7 @@ monthly_returns = monthly_returns.dropna()
 monthly_returns_log = ret(monthly_returns)
 daily_returns_log   = ret(daily_returns)
 
-mweight  = 6
+mweight  = 0
 nmore    = 0.2
 
 assets        = assets.sort_values(by=['Industry', 'Asset'], key=lambda x: x.str.lower())
@@ -29,7 +29,23 @@ equities    = asset_pick.index("Equities")
 housing     = asset_pick.index("Housing")
 metals      = asset_pick.index("Metals")
 
-asset_constraints ={"GOVT": 0.1}
+# Max weightings:
+
+max_ind_weights = {
+    "Bonds": 0.2,
+    "Commodities": 0.4,
+    "Defense": 0.1,
+    "Energies": 0.6,
+    "Equities": 0.8,
+    "Housing": 0.2,
+    "Metals": 0.5
+}
+
+assets['Max_Weight'] = assets['Industry'].map(max_ind_weights)
+
+print(assets)
+
+asset_constraints ={"GOVT": 0.2, "XOP": 0.2, "UNG": 0.2}
 
 portfolio_return_concat, weight_concat, sharpe_array_concat = optimizerbacktest(daily_returns_log, dummy_L_df, daily_returns_log, nmore, mweight, monthly_returns_log, asset_constraints)
 weight_concat = weight_concat.sort_index(axis=1)
@@ -96,5 +112,5 @@ with open(r'C:/Users/Kit/RPVSCode/RiskParity/quantstats-tearsheet.html') as file
 
 modified_content = html_content + html_table
 
-with open(f'C:/Users/Kit/RPVSCode/RiskParity/outputs/quantstats-tearsheet_nmore.html','w') as file: #({nmore})_maxweight({mweight})
+with open(f'F:\outputs\RiskParity-tearsheet_{Start}-{End}.html','w') as file: #({nmore})_maxweight({mweight})
     file.write(modified_content)

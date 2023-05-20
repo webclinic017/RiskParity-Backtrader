@@ -46,10 +46,11 @@ def optimize_sharpe_ratio(Y_adjusted, mean_returns, cov_matrix, mweight, nmore, 
     
     for asset, max_weight in asset_constraints.items():
         if asset in Y_adjusted.columns:
+            print(max_weight)
             asset_index = Y_adjusted.columns.get_loc(asset)
-            constraint = {'type': 'ineq', 'fun': lambda x, asset_index=asset_index, max_weight=max_weight: x[asset_index] - max_weight}
+            constraint = {'type': 'ineq', 'fun': lambda x, asset_index=asset_index, max_weight=max_weight: x[asset_index] - max_weight if x[asset_index] <= max_weight else 0}
             constraints.append(constraint)
-
+    
     # I could add some constraints about how much of each asset class so x -
     
     result = opt.minimize(fun=neg_sharpe_ratio,

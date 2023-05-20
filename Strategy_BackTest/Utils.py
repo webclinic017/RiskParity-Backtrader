@@ -5,8 +5,8 @@ from datetime import date
 import numpy as np
 import yfinance as yf
 
-Start = '2013-02-01'
-End = '2022-01-01'#date.today().strftime("%Y-%m-%d")
+Start = '2013-01-01'
+End = date.today().strftime("%Y-%m-%d")
 
 date1 = datetime.strptime(Start, "%Y-%m-%d")
 date2 = datetime.strptime(End, "%Y-%m-%d")
