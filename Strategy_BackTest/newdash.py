@@ -60,16 +60,16 @@ column_styles = [
     {"selector": f".col{idx}", "props": [("border-right", "1px solid brown"), ("border-left", "1px solid brown")]}
     for idx in range(bonds, commodities)
 ] + [
-    {"selector": f".col{idx}", "props": [("border-right", "1px solid grey"), ("border-left", "1px solid grey")]}
+    {"selector": f".col{idx}", "props": [("border-right", "1px solid brown"), ("border-left", "1px solid grey")]}
     for idx in range(commodities, defense)
 ] + [
-    {"selector": f".col{idx}", "props": [("border-right", "1px solid orange"), ("border-left", "1px solid orange")]}
+    {"selector": f".col{idx}", "props": [("border-right", "1px solid grey"), ("border-left", "1px solid orange")]}
     for idx in range(defense, energies)
 ] + [
-    {"selector": f".col{idx}", "props": [("border-right", "1px solid green"), ("border-left", "1px solid green")]}
+    {"selector": f".col{idx}", "props": [("border-right", "1px solid orange"), ("border-left", "1px solid green")]}
     for idx in range(energies, equities)
 ] + [
-    {"selector": f".col{idx}", "props": [("border-right", "1px solid brown"), ("border-left", "1px solid brown")]}
+    {"selector": f".col{idx}", "props": [("border-right", "1px solid green"), ("border-left", "1px solid brown")]}
     for idx in range(equities, housing)
 ] + [
     {"selector": f".col{idx}", "props": [("border-right", "1px solid gold"), ("border-left", "1px solid gold")]}

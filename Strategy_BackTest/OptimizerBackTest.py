@@ -40,18 +40,21 @@ def optimize_sharpe_ratio(Y_adjusted, mean_returns, cov_matrix, mweight, nmore, 
 
     constraints =   [{'type': 'eq', 'fun': lambda x: np.sum(x) - 1},
                     {'type': 'ineq', 'fun': lambda x, max_weight=0.6: np.max(x) - max_weight},
-                    {'type': 'ineq', 'fun': lambda x: np.sum(x > 0.01) - nmore},  # x > 0.01) - 3 looks good
+                    {'type': 'ineq', 'fun': lambda x: np.sum(x > 0) - nmore},  # x > 0.01) - 3 looks good
     ]
+    
     for asset, max_weight in asset_constraints.items():
-        print(asset)
         if asset in Y_adjusted.columns:
             asset_index = Y_adjusted.columns.get_loc(asset)
-            print(asset_index)
             constraint = {'type': 'ineq', 'fun': lambda x, asset_index=asset_index, max_weight=max_weight: x[asset_index] - max_weight}
-            print(constraint)
             constraints.append(constraint)
+    if 'GOVT' in Y_adjusted.columns:
+        govt_index = Y_adjusted.columns.get_loc('GOVT')
+        govt_max_weight = 0.2
+        constraint = {'type': 'ineq', 'fun': lambda x, govt_index=govt_index, govt_max_weight=govt_max_weight: govt_max_weight - x[govt_index]}
+        constraints.append(constraint)
     # I could add some constraints about how much of each asset class so x -
-
+    
     result = opt.minimize(fun=neg_sharpe_ratio,
                           x0=init_guess,
                           args=args,
