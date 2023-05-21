@@ -46,11 +46,25 @@ def optimize_sharpe_ratio(Y_adjusted, mean_returns, cov_matrix, mweight, nmore, 
     
     for asset, max_weight in asset_constraints.items():
         if asset in Y_adjusted.columns:
-            print(max_weight)
-            asset_index = Y_adjusted.columns.get_loc(asset)
-            constraint = {'type': 'ineq', 'fun': lambda x, asset_index=asset_index, max_weight=max_weight: x[asset_index] - max_weight if x[asset_index] <= max_weight else 0}
+            # Check if the asset is associated with Bonds
+            if Y_adjusted.loc[:, 'industry'].eq('Bonds').any():
+                # Get the indices of assets associated with Bonds
+                bond_assets_indices = Y_adjusted.loc[Y_adjusted['industry'] == 'Bonds'].index
+                bond_assets_weights = x[bond_assets_indices].sum()
+
+                # Calculate the maximum cumulative weight for Bonds assets
+                max_bond_weight = max_weight - bond_assets_weights
+
+                asset_index = Y_adjusted.columns.get_loc(asset)
+                constraint = {'type': 'ineq', 'fun': lambda x, asset_index=asset_index, max_weight=max_bond_weight: (x[asset_index] - max_weight) if (x[asset_index] > 0 and x[asset_index] <= max_bond_weight) else 0}
+                constraints.append(constraint)
+            else:
+                asset_index = Y_adjusted.columns.get_loc(asset)
+                constraint = {'type': 'ineq', 'fun': lambda x, asset_index=asset_index, max_weight=max_weight: (x[asset_index] - max_weight) if (x[asset_index] > 0 and x[asset_index] <= max_weight) else 0}
+                constraints.append(constraint)
+        else:
+            constraint = {'type': 'ineq', 'fun': lambda x: 0}
             constraints.append(constraint)
-    
     # I could add some constraints about how much of each asset class so x -
     
     result = opt.minimize(fun=neg_sharpe_ratio,
