@@ -49,7 +49,10 @@ def optimize_sharpe_ratio(Y_adjusted, mean_returns, cov_matrix, mweight, asset_c
         max_weight = asset_constraints[asset_constraints['Industry'] == industry]['Max_Weight'].iloc[0]
         
         existing_assets = [asset for asset in assets_in_industry if asset in Y_adjusted.columns]
-        print(max_weight, existing_assets)
+        if len(existing_assets) > 0:
+            asset_indices = [Y_adjusted.columns.get_loc(asset) for asset in existing_assets]
+
+            print(industry, max_weight, existing_assets, asset_indices)
 
     result = opt.minimize(fun=neg_sharpe_ratio,
                           x0=init_guess,
