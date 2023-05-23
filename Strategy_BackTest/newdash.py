@@ -31,6 +31,7 @@ metals      = asset_pick.index("Metals")
 
 # Max weightings:
 
+# I think this needs to be dynamicly adjusted.
 max_ind_weights = {
     "Bonds": 0.4,
     "Commodities": 0.7,
