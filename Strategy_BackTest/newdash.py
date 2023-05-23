@@ -32,21 +32,23 @@ metals      = asset_pick.index("Metals")
 # Max weightings:
 
 max_ind_weights = {
-    "Bonds": 0.2,
-    "Commodities": 0.4,
-    "Defense": 0.1,
-    "Energies": 0.6,
-    "Equities": 0.8,
-    "Housing": 0.2,
+    "Bonds": 0.4,
+    "Commodities": 0.7,
+    "Defense": 0.6,
+    "Energies": 0.8,
+    "Equities": 0.2,
+    "Housing": 0.3,
     "Metals": 0.5
 }
 
 assets['Max_Weight'] = assets['Industry'].map(max_ind_weights)
 
-print(assets)
+asset_constraint = assets.copy()
+
+print(asset_constraint)
 
 
-portfolio_return_concat, weight_concat, sharpe_array_concat = optimizerbacktest(daily_returns_log, dummy_L_df, daily_returns_log, nmore, mweight, monthly_returns_log)
+portfolio_return_concat, weight_concat, sharpe_array_concat = optimizerbacktest(daily_returns_log, dummy_L_df, daily_returns_log, nmore, mweight, monthly_returns_log, asset_constraint)
 weight_concat = weight_concat.sort_index(axis=1)
 weight_concat = weight_concat.reindex(columns=df_2.columns)
 

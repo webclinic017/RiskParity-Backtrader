@@ -34,35 +34,23 @@ def portfolio(weights, mean_returns, cov_matrix):
 
     return(np.squeeze(portfolio_return),np.squeeze(portfolio_var),np.squeeze(portfolio_std))
 
-def optimize_sharpe_ratio(Y_adjusted, mean_returns, cov_matrix, mweight,max_ind_weights, nmore, asset_constraints, risk_free_rate=0, w_bounds=(0,1)):
+def optimize_sharpe_ratio(Y_adjusted, mean_returns, cov_matrix, mweight, asset_constraints, nmore, risk_free_rate=0, w_bounds=(0,1)):
     init_guess = np.array([1/len(mean_returns) for _ in range(len(mean_returns))])
     args = (mean_returns, cov_matrix, risk_free_rate)
 
     constraints =   [{'type': 'eq', 'fun': lambda x: np.sum(x) - 1}, # Sum = 1
                     {'type': 'ineq', 'fun': lambda x, max_value=0.5: max_value - np.max(x)}, # max value for a variable > than max_value
                     {'type': 'ineq', 'fun': lambda x, nmore=3: (nmore - np.count_nonzero(x == 0))}, # The n > 0 must be at least nmore
-                    {'type': 'ineq', 'fun': lambda x: np.sum(x[:5]) - 0.2},
-                    #{'type': 'ineq', 'fun': lambda x: np.where(x > 0, x - 0.1, 0)}, #{'type': 'ineq', 'fun': lambda x: np.minimum(x - 0.1, 0)}, # trying to set minimum weights
     ]
 
-    for industry, max_weight in max_ind_weights.items():
-        assets_in_industry = assets[assets['Industry'] == industry]
-        
-        if len(assets_in_industry) > 0:
-            asset_indices = assets_in_industry.index.tolist()
-            constraint = {
-                'type': 'ineq',
-                'fun': lambda x, asset_indices=asset_indices: np.sum(x[asset_indices]) - max_weight
-            }
-        else:
-            constraint = {'type': 'ineq', 'fun': lambda x: 0}
-            
-        constraints.append(constraint)
-    
-
-    
     # I could add some constraints about how much of each asset class so x -
-    
+    for industry in asset_constraints['Industry'].unique():
+        assets_in_industry = asset_constraints[asset_constraints['Industry'] == industry]['Asset']
+        max_weight = asset_constraints[asset_constraints['Industry'] == industry]['Max_Weight'].iloc[0]
+        
+        existing_assets = [asset for asset in assets_in_industry if asset in Y_adjusted.columns]
+        print(max_weight, existing_assets)
+
     result = opt.minimize(fun=neg_sharpe_ratio,
                           x0=init_guess,
                           args=args,
@@ -96,7 +84,7 @@ def ret(monthly_returns):
 
 
 
-def optimizerbacktest(Y_adjusted, trend_df, daily_returns_log, N_More, Max_weight, monthly_returns_log, asset_constraints, max_ind_weights):
+def optimizerbacktest(Y_adjusted, trend_df, daily_returns_log, N_More, Max_weight, monthly_returns_log, asset_constraints):
     weight_concat = sharpe_array_concat = portfolio_return_concat = pd.DataFrame()
     stopper = len(monthly_returns_log)
     monthly_returns_log.index = pd.to_datetime(monthly_returns_log.index)  # Convert index to datetime
@@ -132,9 +120,8 @@ def optimizerbacktest(Y_adjusted, trend_df, daily_returns_log, N_More, Max_weigh
                                                                                     mean_returns,
                                                                                     cov_matrix,
                                                                                     Max_weight,
-                                                                                    max_ind_weights,
-                                                                                    N_More,
                                                                                     asset_constraints,
+                                                                                    N_More,
                                                                                     risk_free_rate=0, w_bounds=(0,1))
                     if b == False:
                         data = np.array([[0.6, 0.4, 1]])
