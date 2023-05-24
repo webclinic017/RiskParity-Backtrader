@@ -2,7 +2,7 @@ from datetime import datetime
 from dateutil.relativedelta import relativedelta
 import pandas as pd
 from datetime import date
-import numpy as np0
+import numpy as np
 import yfinance as yf
 
 Start = '2022-01-01'
