@@ -54,6 +54,12 @@ def optimize_sharpe_ratio(Y_adjusted, mean_returns, cov_matrix, mweight, asset_c
             asset_indices = [Y_adjusted.columns.get_loc(asset) for asset in existing_assets]
 
             print(industry, max_weight, existing_assets, asset_indices)
+            constraint = {
+            'type': 'ineq',
+            'fun': lambda x, asset_indices=asset_indices, max_weight=max_weight: np.sum(x[asset_indices]) - max_weight
+            }
+            constraints.append(constraint)
+
 
     result = opt.minimize(fun=neg_sharpe_ratio,
                           x0=init_guess,

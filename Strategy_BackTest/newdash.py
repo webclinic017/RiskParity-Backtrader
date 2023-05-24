@@ -37,7 +37,7 @@ max_ind_weights = {
     "Commodities": 0.7,
     "Defense": 0.6,
     "Energies": 0.8,
-    "Equities": 0.2,
+    "Equities": 0.8,
     "Housing": 0.3,
     "Metals": 0.5
 }
@@ -46,8 +46,7 @@ assets['Max_Weight'] = assets['Industry'].map(max_ind_weights)
 
 asset_constraint = assets.copy()
 
-print(asset_constraint)
-
+print(daily_returns_log)
 
 portfolio_return_concat, weight_concat, sharpe_array_concat = optimizerbacktest(daily_returns_log, dummy_L_df, daily_returns_log, nmore, mweight, monthly_returns_log, asset_constraint)
 weight_concat = weight_concat.sort_index(axis=1)
