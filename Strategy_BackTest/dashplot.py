@@ -10,12 +10,11 @@ import dash
 import dash_core_components as dcc
 from dash import html
 from Utils import bench
-from OptimizerBackTest import portfolio_return_concat, portfolio_return_concat, weight_concat, asset_classes, sharpe_array_concat, bonds, commodities, defense, leng, energies, equities, housing, metals
+from OptimizerBackTest import old_sharpe, Merged_df, Port_sh, Bench,  portfolio_return_concat, weight_concat, asset_classes, sharpe_array_concat, bonds, commodities, defense, leng, energies, equities, housing, metals
 
 warnings.filterwarnings("ignore")
 
 benchmark = 'Bench_Return'
-Bench, merged_df = bench(portfolio_return_concat.index.min(), benchmark, portfolio_return_concat)
 
 weight_concat, this_month_weight = output_mgmt(weight_concat)
 weight_concat.dropna()
@@ -38,56 +37,6 @@ def df_merger(weights_df, weight_long):
         weight_long.rename(columns={asset_long: column_name}, inplace=True)
     return weights_df, weight_long
 
-def generate_weights_table(weights_df, asset_classes):
-    weight_long = long_names(asset_classes, weights_df)
-    weights_df2 = weights_df.copy()
-    weights_df, weight_long = df_merger(weights_df, weight_long)
-    col_num = 1
-
-    weights_table = html.Table(
-        style={'border': '1px solid black', 'padding': '10px'},
-        children=[
-            # create table header row
-            html.Tr(
-                style={'background-color': 'grey',                              # Header
-                       'color': 'white',
-                       'border': '120px solid black',
-                       'padding': '120px',
-                       'font-family': 'Arial',
-                       'font-size': '14px'},
-                children=[
-                    html.Th('Date:'),
-                    *[html.Th(col, style={'text-align': 'center'}) for col in weights_df2.columns]
-                ]
-            ),
-            # create table body rows
-            *[html.Tr(
-                children=[
-                    html.Td(index, style={'font-weight': 'bold',                # Left index
-                                          'border': '1px solid black' + ('red' if col_num <= 5 else 'grey'),
-                                          'padding': '1px',
-                                          'font-family': 'Arial',
-                                          'font-size': '14px',}),
-                    *[html.Td(round(weights_df.loc[index, col], 4),
-                              style={'text-align': 'center',
-                                     'border': '1px solid grey',
-                                     'padding': '1px',
-                                     'font-family': 'Arial',
-                                     'font-size': '12px',
-                                     'background-color': '#0DBF00' if weights_df.loc[index, col] > 0.5 
-                                       else '#9ACD32' if weights_df.loc[index, col] > 0.2 
-                                       else '#6FD17A' if weights_df.loc[index, col] > 0.1
-                                       else '#D6FF97' if weights_df.loc[index, col] > 0.04
-                                       else 'white',
-                                       },
-                                       title=col,
-                                ) for col_num,col in enumerate(weights_df.columns, start=1)],
-                ]
-            ) for index in weights_df.index.strftime('%Y-%m-%d')]
-        ]
-    )
-    return weights_table
-
 def generate_weights_table_table(weights_df, asset_classes, ider):
     weight_long = long_names(asset_classes, weights_df)
     weights_df2 = weights_df.copy()
@@ -96,7 +45,7 @@ def generate_weights_table_table(weights_df, asset_classes, ider):
     weights_df2['Index'] = weights_df2.index
     weights_df2['Index'] = pd.to_datetime(weights_df2['Index'])
     weights_df2['Index'] = weights_df2['Index'].dt.strftime('%Y-%m-%d')
-
+    # I need to add 0 to the empty columns, or drop?
     weights_df2 = weights_df2[['Index'] + [col for col in weights_df2.columns if col != 'Index']]
     weights_table = dash_table.DataTable(
         id = ider,
@@ -142,12 +91,15 @@ def generate_weights_table_table(weights_df, asset_classes, ider):
             [{'if': {'column_id': weights_df2.columns[0]},'fontWeight': 'bold', 'font-size': '10px', 'minWidth': '10px', 'maxWidth': '10px'}])
     return weights_table
 
-def portfolio_data(df, col, num_days, average_number_days):
-    Net_Returns = df[f'{col}'].mean()* num_days
-    Average_Returns = df[f'{col}'].mean() * average_number_days
-    std = df[f'{col}'].std() * average_number_days
-    Sharpe_Ratio =  np.sqrt(average_number_days) * (Average_Returns / std)
-    return Net_Returns, std, Sharpe_Ratio
+def portfolio_data(df, col, num_days, average_number_days, portfoliotreturn):
+    last_month_returns = df.mean()
+    last_month_std_returns = df.std()
+    last_month_sharpe_ratio = np.sqrt(240) * (last_month_returns / last_month_std_returns)
+    last_month_sharpe_ratio = last_month_sharpe_ratio.astype(np.float64).values
+    Net_Returns = 1
+    std = 1
+    print(last_month_sharpe_ratio)
+    return Net_Returns == 1, std, last_month_sharpe_ratio
 
 def last_month_data(df, col):
     last_month_returns = df.resample('M').mean().iloc[-2]
@@ -184,17 +136,15 @@ def frontier_chart(vol_arr, ret_arr, sharpe_arr, selected_index):
                          marker_size = 10, name = 'Portfolio Estimate'))
     return frontier
 
-def portfolio_returns_app(returns_df, weights_df, this_month_weight, Bench, sharpe_array):
+def portfolio_returns_app(returns_df, weights_df, this_month_weight, Bench, sharpe_array, portfolio_return_concat):
     num_years = (returns_df.index.max() - returns_df.index.min()).days / 365
     num_days = len(returns_df)
     average_number_days = num_days/num_years
     returns = returns_df.pct_change()
+    bench_pct = Bench.pct_change()
+    bench_pct.dropna(inplace=True)
     returns.dropna(inplace=True)
-    Portfolio_Net_Returns, Portfolio_std, Portfolio_Sharpe_Ratio = portfolio_data(returns, 'portfolio_return', num_days, average_number_days)
-    last_month_sharpe_ratio = last_month_data(returns, 'portfolio_return')
-    Bench_Net_Returns, Bench_std, Bench_Sharpe_Ratio = portfolio_data(Bench.pct_change(), f'{benchmark}', num_days, average_number_days)
-    last_month_sharpe_ratio_bench = last_month_data(Bench.pct_change(), f'{benchmark}')
- 
+    
     fig = go.Figure()
 
     returns_df = returns_df.sort_index(ascending=False)
@@ -241,28 +191,13 @@ def portfolio_returns_app(returns_df, weights_df, this_month_weight, Bench, shar
             ]),
             html.Tr(children=[
                 html.Td('Net Returns'),
-                html.Td(round(Portfolio_Net_Returns, 4)),
-                html.Td(round(Bench_Net_Returns, 4)),
+                html.Td(round((Merged_df.iloc[-1]-10000)/10000, 4)),
+                html.Td(round((Bench.iloc[-1]-10000)/10000, 4)),
             ]),
             html.Tr(children=[
                 html.Td('Avg Yr Returns'),
-                html.Td(round(Portfolio_Net_Returns / num_years, 4)),
-                html.Td(round(Bench_Net_Returns / num_years, 4))
-            ]),
-            html.Tr(children=[
-                html.Td('Std Returns'),
-                html.Td(round(Portfolio_std, 4)),
-                html.Td(round(Bench_std, 4))
-            ]),
-            html.Tr(children=[
-                html.Td('Sharpe Ratio'),
-                html.Td(str(round(Portfolio_Sharpe_Ratio, 4))),
-                html.Td(str(round(Bench_Sharpe_Ratio, 4)))
-            ]),
-            html.Tr(children=[
-                html.Td('L/M sharpe Ratio'),
-                html.Td(str(round(float(last_month_sharpe_ratio), 4))),
-                html.Td(str(round(float(last_month_sharpe_ratio_bench), 4)))
+                html.Td(round((Merged_df.iloc[-1]-10000)/10000 / num_years, 4)),
+                html.Td(round((Bench.iloc[-1]-10000)/10000 / num_years, 4))
             ])
         ])
 
@@ -306,7 +241,7 @@ def portfolio_returns_app(returns_df, weights_df, this_month_weight, Bench, shar
 
     return app
 
-app = portfolio_returns_app(merged_df, weight_concat, this_month_weight, Bench, sharpe_array_concat)
+app = portfolio_returns_app(Merged_df, weight_concat, this_month_weight, Bench, sharpe_array_concat, portfolio_return_concat)
 app.run_server(debug=False)
 
 

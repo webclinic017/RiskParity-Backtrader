@@ -2,11 +2,11 @@ from datetime import datetime
 from dateutil.relativedelta import relativedelta
 import pandas as pd
 from datetime import date
-import numpy as np
+import numpy as np0
 import yfinance as yf
 
 Start = '2022-01-01'
-End = '2023-05-02'#date.today().strftime("%Y-%m-%d")
+End = date.today().strftime("%Y-%m-%d")
 
 date1 = datetime.strptime(Start, "%Y-%m-%d")
 date2 = datetime.strptime(End, "%Y-%m-%d")

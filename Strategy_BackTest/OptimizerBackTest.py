@@ -6,7 +6,7 @@ from scipy.optimize import minimize, Bounds, LinearConstraint
 from Utils import *
 import warnings
 from dateutil.relativedelta import relativedelta
-import quantstats as qs
+from datamanagement import *
 from Trend_Following import dummy_L_df, ret as daily_returns, asset_classes, asset
 warnings.filterwarnings("ignore")
 ### New optimization, max sharpe
@@ -158,3 +158,31 @@ def optimizerbacktest(Y_adjusted, trend_df, daily_returns_log, N_More, Max_weigh
                 portfolio_return_concat = pd.concat([portfolio_return_concat, portfolio_return], axis=0) #Long
 
     return portfolio_return_concat, weight_concat, sharpe_array_concat
+
+portfolio_return_concat, weight_concat, sharpe_array_concat = optimizerbacktest(monthly_returns_log, dummy_L_df, daily_returns_log)
+weight_concat = weight_concat.sort_index(axis=1)
+assets        = assets.sort_values(by=['Industry', 'Asset'], key=lambda x: x.str.lower())
+assets        = assets.reset_index(drop=True)
+df_2 = pd.DataFrame(columns = assets['Asset'].to_list())
+weight_concat = weight_concat.reindex(columns=df_2.columns)
+
+asset_pick = assets['Industry'].to_list()
+
+bonds       = asset_pick.index("Bonds")
+commodities = asset_pick.index("Commodities")
+defense     = asset_pick.index("Defense")
+energies    = asset_pick.index("Energies")
+equities    = asset_pick.index("Equities")
+housing     = asset_pick.index("Housing")
+metals      = asset_pick.index("Metals")
+
+print(type(metals))
+leng         = len(asset_pick)
+
+print(portfolio_return_concat.var())
+benchmark = 'hello'
+Bench, merged_df = bench(portfolio_return_concat.index.min(), benchmark, portfolio_return_concat)
+
+
+print("back")
+pf.create_returns_tear_sheet(merged_df, live_start_date=Start)
