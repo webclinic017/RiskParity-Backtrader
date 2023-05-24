@@ -10,50 +10,51 @@ from datamanagement import *
 import quantstats as qs
 from Trend_Following import dummy_L_df, ret as daily_returns, asset_classes, asset
 warnings.filterwarnings("ignore")
-
-#from Trend_Following import * #Start, End, ret, dummy_L_df, months_between, next_month
-
-monthly_returns, asset_classes, asset, assets = data_management(Start, End, '1mo')
-#daily_returns, asset_classes, asset = data_management(Start, End, '1d')
-monthly_returns = monthly_returns.dropna()
-
 ### New optimization, max sharpe
+
+'''
+I could get a list of each asset group and set the maximum sum weight = x?
+
+'''
+
 def neg_sharpe_ratio(weights, mean_returns, cov_matrix, risk_free_rate=0):
     portfolio_return, portfolio_var, portfolio_std = portfolio(weights, mean_returns, cov_matrix)
     sr = ((portfolio_return - risk_free_rate)/portfolio_std) * (len(mean_returns)**0.5) # annualized
     return(-sr)
 
 def calc_returns_stats(returns):
-    """
-    Parameters
-        returns: returns timeseries pd.DataFrame object
 
-    Returns:
-        mean_returns: Avereage of returns
-        cov_matrix: returns Covariance matrix
-    """
     mean_returns = returns.mean()
     cov_matrix = returns.cov()
     return(mean_returns, cov_matrix)
 
 def portfolio(weights, mean_returns, cov_matrix):
-
     portfolio_return = np.dot(weights.reshape(1,-1), mean_returns.values.reshape(-1,1))
     portfolio_var = np.dot(np.dot(weights.reshape(1,-1), cov_matrix.values), weights.reshape(-1,1))
     portfolio_std = np.sqrt(portfolio_var)
 
     return(np.squeeze(portfolio_return),np.squeeze(portfolio_var),np.squeeze(portfolio_std))
 
-
-def optimize_sharpe_ratio(mean_returns, cov_matrix, risk_free_rate=0, w_bounds=(0,1)):
-    "This function finds the portfolio weights which minimize the negative sharpe ratio"
-
+def optimize_sharpe_ratio(Y_adjusted, mean_returns, cov_matrix, mweight, asset_constraints, nmore, risk_free_rate=0, w_bounds=(0,1)):
     init_guess = np.array([1/len(mean_returns) for _ in range(len(mean_returns))])
     args = (mean_returns, cov_matrix, risk_free_rate)
-    constraints =   ({'type': 'eq', 'fun': lambda x: np.sum(x) - 1},
-                    {'type': 'ineq', 'fun': lambda x: 0.5 - x},
-                    {'type': 'ineq', 'fun': lambda x: np.sum(x > 0.01) - 3}  # x > 0.01) - 3 looks good
-                   )
+
+    constraints =   [{'type': 'eq', 'fun': lambda x: np.sum(x) - 1}, # Sum = 1
+                    {'type': 'ineq', 'fun': lambda x, max_value=0.5: max_value - np.max(x)}, # max value for a variable > than max_value
+                    {'type': 'ineq', 'fun': lambda x, nmore=3: (nmore - np.count_nonzero(x == 0))}, # The n > 0 must be at least nmore
+    ]
+
+    # I could add some constraints about how much of each asset class so x -
+    for industry in asset_constraints['Industry'].unique():
+        assets_in_industry = asset_constraints[asset_constraints['Industry'] == industry]['Asset']
+        max_weight = asset_constraints[asset_constraints['Industry'] == industry]['Max_Weight'].iloc[0]
+        
+        existing_assets = [asset for asset in assets_in_industry if asset in Y_adjusted.columns]
+        if len(existing_assets) > 0:
+            asset_indices = [Y_adjusted.columns.get_loc(asset) for asset in existing_assets]
+
+            print(industry, max_weight, existing_assets, asset_indices)
+
     result = opt.minimize(fun=neg_sharpe_ratio,
                           x0=init_guess,
                           args=args,
@@ -64,14 +65,12 @@ def optimize_sharpe_ratio(mean_returns, cov_matrix, risk_free_rate=0, w_bounds=(
                           )
     
     if result['success']:
-        print(result['message'])
         opt_sharpe = - result['fun']
         opt_weights = result['x']
         opt_return, opt_variance, opt_std = portfolio(opt_weights, mean_returns, cov_matrix)
         b = True
         return(opt_sharpe, opt_weights, opt_return.item()*252, opt_variance.item()*252, opt_std.item()*(252**0.5), b)
     else:
-        print("Optimization was not succesfull!")
         print(result['message'])
 
         opt_weights = [0.6,0.4]
@@ -81,54 +80,15 @@ def optimize_sharpe_ratio(mean_returns, cov_matrix, risk_free_rate=0, w_bounds=(
         return(opt_sharpe, opt_weights, opt_return, opt_variance, opt_std, b)
 
 
-
-### Old optimization method, min variance
-def optimize_portfolio(returns_data):
-    # Number of assets in the portfolio
-    num_assets = len(returns_data.columns)
-
-    # Calculate covariance matrix
-    cov_matrix = returns_data.cov()
-
-    # Set random seed for reproducibility
-
-    # Define optimization function
-    def portfolio_variance(weights):
-        portfolio_variance = np.dot(weights.T, np.dot(cov_matrix, weights))
-        return portfolio_variance
-
-    # Define optimization constraints
-    constraints = (
-    {'type': 'eq', 'fun': lambda x: np.sum(x) - 1},  # Constraint: weights sum to 1
-    )
-
-    # Define optimization bounds
-    bounds = tuple((0, 1) for _ in range(num_assets))  # Bounds: 0 <= weights <= 1
-
-    # Initial guess for weights
-    initial_weights = np.ones(num_assets) / num_assets
-
-    # Perform portfolio optimization
-    result = minimize(portfolio_variance, initial_weights, method='SLSQP', constraints=constraints, bounds=bounds)
-
-    print(result.message)
-
-    # Extract optimized weights
-    optimized_weights = result.x
-
-    return optimized_weights
-
 def ret(monthly_returns):
     monthly_returns_log = monthly_returns.pct_change() #np.log(monthly_returns/monthly_returns.shift(1))
     monthly_returns_log = monthly_returns_log.dropna()
     monthly_returns_log.index = pd.to_datetime(monthly_returns_log.index).strftime('%Y-%m-%d')
     return monthly_returns_log
 
-monthly_returns_log = ret(monthly_returns)
-daily_returns_log   = ret(daily_returns)
 
 
-def optimizerbacktest(Y_adjusted, trend_df, daily_returns_log):
+def optimizerbacktest(Y_adjusted, trend_df, daily_returns_log, N_More, Max_weight, monthly_returns_log, asset_constraints):
     weight_concat = sharpe_array_concat = portfolio_return_concat = pd.DataFrame()
     stopper = len(monthly_returns_log)
     monthly_returns_log.index = pd.to_datetime(monthly_returns_log.index)  # Convert index to datetime
@@ -160,12 +120,14 @@ def optimizerbacktest(Y_adjusted, trend_df, daily_returns_log):
                     mean_returns, cov_matrix = calc_returns_stats(Y_adjusted)
 
                     # max sharpe portfolio
-                    opt_sharpe, w, opt_return, opt_variance, opt_std, b = optimize_sharpe_ratio(
+                    opt_sharpe, w, opt_return, opt_variance, opt_std, b = optimize_sharpe_ratio(Y_adjusted,
                                                                                     mean_returns,
                                                                                     cov_matrix,
+                                                                                    Max_weight,
+                                                                                    asset_constraints,
+                                                                                    N_More,
                                                                                     risk_free_rate=0, w_bounds=(0,1))
                     if b == False:
-                        print("Failed")
                         data = np.array([[0.6, 0.4, 1]])
                         next_month  = start_next_month.month
                         next_year   = start_next_month.year
