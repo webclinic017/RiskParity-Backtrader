@@ -38,7 +38,7 @@ def portfolio(weights, mean_returns, cov_matrix):
 def optimize_sharpe_ratio(Y_adjusted, mean_returns, cov_matrix, mweight, asset_constraints, nmore, risk_free_rate=0, w_bounds=(0,1)):
     init_guess = np.array([1/len(mean_returns) for _ in range(len(mean_returns))])
     args = (mean_returns, cov_matrix, risk_free_rate)
-
+    print(Y_adjusted.columns)
     constraints =   [{'type': 'eq', 'fun': lambda x: np.sum(x) - 1}, # Sum = 1
                     {'type': 'ineq', 'fun': lambda x, max_value=0.5: max_value - np.max(x)}, # max value for a variable > than max_value
                     {'type': 'ineq', 'fun': lambda x, nmore=3: (nmore - np.count_nonzero(x == 0))}, # The n > 0 must be at least nmore
@@ -52,12 +52,11 @@ def optimize_sharpe_ratio(Y_adjusted, mean_returns, cov_matrix, mweight, asset_c
         existing_assets = [asset for asset in assets_in_industry if asset in Y_adjusted.columns]
         if len(existing_assets) > 0:
             asset_indices = [Y_adjusted.columns.get_loc(asset) for asset in existing_assets]
-
             print(industry, max_weight, existing_assets, asset_indices)
             constraint = {
-            'type': 'ineq',
-            'fun': lambda x, asset_indices=asset_indices, max_weight=max_weight: np.sum(x[asset_indices]) - max_weight
-            }
+                'type': 'ineq',
+                'fun': lambda x, asset_indices=asset_indices, max_weight=max_weight: max_weight - np.sum(x[asset_indices])
+                }
             constraints.append(constraint)
 
 
@@ -67,7 +66,7 @@ def optimize_sharpe_ratio(Y_adjusted, mean_returns, cov_matrix, mweight, asset_c
                           method='SLSQP',
                           bounds=tuple(w_bounds for _ in range(len(mean_returns))),
                           constraints=constraints,
-                          options={'maxiter': 100},
+                          options={'maxiter': 10000},
                           )
     
     if result['success']:

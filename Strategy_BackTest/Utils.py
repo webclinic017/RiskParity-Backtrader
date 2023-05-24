@@ -4,7 +4,7 @@ import pandas as pd
 from datetime import date
 import numpy as np0
 import yfinance as yf
-Start = '2021-08-01'
+Start = '2013-01-01'
 End = date.today().strftime("%Y-%m-%d")
 
 date1 = datetime.strptime(Start, "%Y-%m-%d")
@@ -15,7 +15,7 @@ months_between = (diff.years)*12 + diff.months + 1
 rng_start = pd.date_range(Start, periods=months_between, freq='MS')
 
 def asset_trimmer(df_split_monthly, Y):
-    cols_to_drop = [col for col in df_split_monthly.columns if df_split_monthly[col].max() < 0.8]
+    cols_to_drop = [col for col in df_split_monthly.columns if df_split_monthly[col].max() < 0.6]
     Y = Y.drop(columns=cols_to_drop)
     return Y
 
