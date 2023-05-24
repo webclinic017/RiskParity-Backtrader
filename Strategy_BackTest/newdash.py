@@ -42,11 +42,11 @@ max_ind_weights = {
     "Metals": 0.8
 }
 
+
 assets['Max_Weight'] = assets['Industry'].map(max_ind_weights)
 
 asset_constraint = assets.copy()
 
-print(dummy_L_df)
 
 portfolio_return_concat, weight_concat, sharpe_array_concat = optimizerbacktest(daily_returns_log, dummy_L_df, daily_returns_log, nmore, mweight, monthly_returns_log, asset_constraint)
 weight_concat = weight_concat.sort_index(axis=1)
@@ -57,8 +57,6 @@ leng         = len(asset_pick)
 benchmark = 'Benchmark'
 Bench, Merged_df = bench(portfolio_return_concat.index.min(), benchmark, portfolio_return_concat)
 
-qs.reports.html(Merged_df.iloc[:,0], Bench.pct_change().iloc[:,0], output='F:/outputs/quantstats-tearsheet.html')
-#qs.reports.html(Merged_df, Bench)
 weight_concat['Index'] = weight_concat.index
 weight_concat['Index'] = pd.to_datetime(weight_concat['Index'])
 weight_concat['Index'] = weight_concat['Index'].dt.strftime('%Y-%m-%d')
@@ -68,6 +66,32 @@ weight_concat = weight_concat.drop('Index', axis=1)
 
 weight_concat = weight_concat.round(2)
 #04B018
+
+
+def calculate_commissions(weight_concat):
+    num_positive_values = weight_concat.gt(0).sum(axis=1)
+    trades = num_positive_values.sum()
+    return trades*4, trades
+
+
+commissions, trades = calculate_commissions(weight_concat)
+
+trades_series = pd.Series(trades)
+commissions_series = pd.Series(commissions)
+table_data = pd.concat([trades_series, commissions_series], axis=1, keys=['Trades', 'Commissions'])
+table_data = table_data.set_axis(['Dollars'], axis='index')
+
+
+commissions_table = (
+    table_data.style
+    .format("{:.2f}")
+    .set_properties(**{'text-align': 'right', 'font-size': '12px'})  # Adjust font size
+    .set_table_attributes('style="width: 50%;"')  # Adjust table width
+    .render()
+)
+
+
+qs.reports.html(Merged_df.iloc[:,0], Bench.pct_change().iloc[:,0], commissions=commissions, output='F:/outputs/quantstats-tearsheet.html')
 
 column_styles = [
     {"selector": f".col{idx}", "props": [("border-right", "1px solid magenta"), ("border-left", "1px solid magenta")]}
@@ -107,6 +131,7 @@ html_table = (
     .set_table_styles(column_styles)
     .render()
 )
+
 
 with open(r'C:/Users/Kit/RPVSCode/RiskParity/quantstats-tearsheet.html') as file:
     html_content = file.read()
