@@ -5,8 +5,6 @@ from datamanagement import *
 
 monthly_returns, asset_classes, asset, assets = data_management(Start, End, '1mo')
 
-monthly_returns = monthly_returns.dropna()
-
 monthly_returns_log = ret(monthly_returns)
 daily_returns_log   = ret(daily_returns)
 
