@@ -85,7 +85,8 @@ def optimize_sharpe_ratio(Y_adjusted, mean_returns, cov_matrix, mweight, asset_c
 
 def ret(monthly_returns):
     monthly_returns_log = monthly_returns.pct_change() #np.log(monthly_returns/monthly_returns.shift(1))
-    monthly_returns_log = monthly_returns_log.dropna()
+    monthly_returns_log = monthly_returns_log.fillna(0)
+    monthly_returns_log = monthly_returns_log.drop(monthly_returns_log.index[0])
     monthly_returns_log.index = pd.to_datetime(monthly_returns_log.index).strftime('%Y-%m-%d')
     return monthly_returns_log
 
@@ -93,7 +94,7 @@ def ret(monthly_returns):
 
 def optimizerbacktest(Y_adjusted, trend_df, daily_returns_log, N_More, Max_weight, monthly_returns_log, asset_constraints):
     weight_concat = sharpe_array_concat = portfolio_return_concat = pd.DataFrame()
-    stopper = len(monthly_returns_log)
+    stopper = len(monthly_returns_log.drop(monthly_returns_log.index[0]))+1
     monthly_returns_log.index = pd.to_datetime(monthly_returns_log.index)  # Convert index to datetime
     daily_returns_log.index = pd.to_datetime(daily_returns_log.index)
     date_bench = daily_returns_log.iloc[199:200].index
@@ -110,7 +111,6 @@ def optimizerbacktest(Y_adjusted, trend_df, daily_returns_log, N_More, Max_weigh
             next_month_returns = daily_returns_log[(daily_returns_log.index.month == next_month.month) & (daily_returns_log.index.year == next_month.year)]
             start_cur   = current_month_returns.index[0]
             end_cur     = current_month_returns.index[-1]
-
             if row_number != stopper:
                 start_next_month  = next_month_returns.index[0]
                 end_next    = next_month_returns.index[-1]
@@ -153,7 +153,8 @@ def optimizerbacktest(Y_adjusted, trend_df, daily_returns_log, N_More, Max_weigh
                         Y_adjusted_next_L   = pd.DataFrame(asset_trimmer(pd.DataFrame(trend_df.iloc[row_number+1]), next_month_returns)) #Long
                         weight_concat, w, sharpe_array_concat = weightings(w, Y_adjusted, next_month, weight_concat, sharpe_array_concat, 1, b)
 
-                    w = w.drop('sharpe', axis=1)
+                    w = w.drop('sharpe', axis=1) # This is the weightings for next month based on this current months values
+
                     for col in w:
                         new_df = pd.DataFrame(w[col].values * Y_adjusted_next_L[col], columns=[col])
                         portfolio_return.index = new_df.index

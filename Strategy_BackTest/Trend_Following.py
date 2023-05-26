@@ -14,8 +14,8 @@ short   = 30
 ret, asset_classes, asset, assets = data_management(Start, End, '1d')
 
 def calculate_rolling_average(ret, days):
-    ret = ret.dropna()
     rolling_df = pd.DataFrame()
+    ret = ret.fillna(0)  # Fill missing values with 0
     for column in ret.columns:
         rolling_df[column] = ret[column].rolling(window=200).mean()
     rolling_df = dummy_sma(rolling_df, ret)

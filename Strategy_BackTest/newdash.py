@@ -7,11 +7,10 @@ from Utils import bench
 
 monthly_returns, asset_classes, asset, assets = data_management(Start, End, '1mo')
 
-monthly_returns = monthly_returns.dropna()
+monthly_returns = monthly_returns.fillna(0)
 
 monthly_returns_log = ret(monthly_returns)
 daily_returns_log   = ret(daily_returns)
-
 mweight  = 0
 nmore    = 0.2
 
@@ -33,10 +32,10 @@ metals      = asset_pick.index("Metals")
 
 # I think this needs to be dynamicly adjusted.
 max_ind_weights = {
-    "Bonds": 0.5,
+    "Bonds": 0.8,
     "Commodities": 1,
     "Defense": 1,
-    "Energies": 0.2,
+    "Energies": 0.8,
     "Equities": 1,
     "Housing": 1,
     "Metals": 0.8
@@ -47,15 +46,16 @@ assets['Max_Weight'] = assets['Industry'].map(max_ind_weights)
 
 asset_constraint = assets.copy()
 
-
+print(dummy_L_df)
 portfolio_return_concat, weight_concat, sharpe_array_concat = optimizerbacktest(daily_returns_log, dummy_L_df, daily_returns_log, nmore, mweight, monthly_returns_log, asset_constraint)
+print(portfolio_return_concat)
 weight_concat = weight_concat.sort_index(axis=1)
 weight_concat = weight_concat.reindex(columns=df_2.columns)
 
 leng         = len(asset_pick)
-
+print(portfolio_return_concat)
 benchmark = 'Benchmark'
-Bench, Merged_df = bench(portfolio_return_concat.index.min(), benchmark, portfolio_return_concat)
+Bench, Merged_df = bench(portfolio_return_concat.index[0], benchmark, portfolio_return_concat)
 
 weight_concat['Index'] = weight_concat.index
 weight_concat['Index'] = pd.to_datetime(weight_concat['Index'])
@@ -91,7 +91,7 @@ commissions_table = (
 )
 
 
-qs.reports.html(Merged_df.iloc[:,0], Bench.pct_change().iloc[:,0], commissions=commissions, output='F:/outputs/quantstats-tearsheet.html')
+qs.reports.html(Merged_df.iloc[:,0], Bench.pct_change().iloc[:,0], rf = 0., commissions=commissions, output='F:/outputs/quantstats-tearsheet.html')
 
 column_styles = [
     {"selector": f".col{idx}", "props": [("border-right", "1px solid magenta"), ("border-left", "1px solid magenta")]}

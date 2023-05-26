@@ -2,10 +2,10 @@ from datetime import datetime
 from dateutil.relativedelta import relativedelta
 import pandas as pd
 from datetime import date
-import numpy as np0
+import numpy as np
 import yfinance as yf
-Start = '2013-01-01'
-End = date.today().strftime("%Y-%m-%d")
+Start = '2000-01-01'
+End = '2021-01-31' # date.today().strftime("%Y-%m-%d")
 
 date1 = datetime.strptime(Start, "%Y-%m-%d")
 date2 = datetime.strptime(End, "%Y-%m-%d")
@@ -70,14 +70,14 @@ def output_mgmt(weight_concat):
 def bench(Bench_start, benchmark, portfolio_return_concat):
     Bench_W = Bench = pd.DataFrame([])
     print(benchmark)
-    benchasset = ['VTI','BND']
+    benchasset = ['SPY']
     for i in benchasset:
         if i == 'VTI':
-            Bench_W = yf.download(i, start=Bench_start, end=End)['Adj Close'].pct_change() * 0.6
+            Bench_W = yf.download(i, start=Bench_start, end=End)['Adj Close'].pct_change()
         else:
-            Bench_W = yf.download(i, start=Bench_start, end=End)['Adj Close'].pct_change() * 0.4
+            Bench_W = yf.download(i, start=Bench_start, end=End)['Adj Close'].pct_change()
         Bench = pd.concat([Bench, Bench_W], axis=1)
-    print(benchmark)
+    print(Bench)
     Bench = pd.DataFrame(pd.DataFrame(Bench)).sum(axis=1)
     Bench.iloc[0] = 0
     Bench = (1 + Bench).cumprod() * 10000
