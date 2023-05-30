@@ -4,8 +4,8 @@ import pandas as pd
 from datetime import date
 import numpy as np
 import yfinance as yf
-Start = '2000-01-01'
-End = '2021-01-31' # date.today().strftime("%Y-%m-%d")
+Start = '2010-01-01'
+End = date.today().strftime("%Y-%m-%d")
 
 date1 = datetime.strptime(Start, "%Y-%m-%d")
 date2 = datetime.strptime(End, "%Y-%m-%d")
@@ -87,4 +87,4 @@ def bench(Bench_start, benchmark, portfolio_return_concat):
     merged_df = portfolio_return_concat
     merged_df.iloc[0] = 0
     merged_df = (1 + merged_df).cumprod() * 10000
-    return Bench, merged_df
+    return Bench.sort_index(ascending=True), merged_df.sort_index(ascending=True)

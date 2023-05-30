@@ -32,7 +32,7 @@ metals      = asset_pick.index("Metals")
 
 # I think this needs to be dynamicly adjusted.
 max_ind_weights = {
-    "Bonds": 0.8,
+    "Bonds": 0.6,
     "Commodities": 1,
     "Defense": 1,
     "Energies": 0.8,
@@ -46,14 +46,12 @@ assets['Max_Weight'] = assets['Industry'].map(max_ind_weights)
 
 asset_constraint = assets.copy()
 
-print(dummy_L_df)
+print(daily_returns_log['SPY'].to_string())
 portfolio_return_concat, weight_concat, sharpe_array_concat = optimizerbacktest(daily_returns_log, dummy_L_df, daily_returns_log, nmore, mweight, monthly_returns_log, asset_constraint)
-print(portfolio_return_concat)
 weight_concat = weight_concat.sort_index(axis=1)
 weight_concat = weight_concat.reindex(columns=df_2.columns)
 
 leng         = len(asset_pick)
-print(portfolio_return_concat)
 benchmark = 'Benchmark'
 Bench, Merged_df = bench(portfolio_return_concat.index[0], benchmark, portfolio_return_concat)
 

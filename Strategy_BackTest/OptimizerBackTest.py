@@ -23,7 +23,7 @@ def neg_sharpe_ratio(weights, mean_returns, cov_matrix, risk_free_rate=0):
     return(-sr)
 
 def calc_returns_stats(returns):
-
+    returns = returns.sort_index(ascending=True)
     mean_returns = returns.mean()
     cov_matrix = returns.cov()
     return(mean_returns, cov_matrix)
@@ -37,11 +37,15 @@ def portfolio(weights, mean_returns, cov_matrix):
 
 def optimize_sharpe_ratio(Y_adjusted, mean_returns, cov_matrix, mweight, asset_constraints, nmore, risk_free_rate=0, w_bounds=(0,1)):
     init_guess = np.array([1/len(mean_returns) for _ in range(len(mean_returns))])
+    Y_adjusted = Y_adjusted.sort_index(ascending=True)
+    mean_returns = mean_returns.sort_index(ascending=True)
+
     args = (mean_returns, cov_matrix, risk_free_rate)
     constraints =   [{'type': 'eq', 'fun': lambda x: np.sum(x) - 1}, # Sum = 1
-                    {'type': 'ineq', 'fun': lambda x, max_value=0.5: max_value - np.max(x)}, # max value for a variable > than max_value
-                    {'type': 'ineq', 'fun': lambda x, nmore=3: (nmore - np.count_nonzero(x == 0))}, # The n > 0 must be at least nmore
+                    {'type': 'ineq', 'fun': lambda x, max_value=0.6: max_value - np.max(x)}, # max value for a variable > than max_value
+                    {'type': 'ineq', 'fun': lambda x, nmore=1: (nmore - np.count_nonzero(x == 0))}, # The n > 0 must be at least nmore
     ]
+    print(Y_adjusted)
 
     # I could add some constraints about how much of each asset class so x -
     for industry in asset_constraints['Industry'].unique():
@@ -64,7 +68,7 @@ def optimize_sharpe_ratio(Y_adjusted, mean_returns, cov_matrix, mweight, asset_c
                           method='SLSQP',
                           bounds=tuple(w_bounds for _ in range(len(mean_returns))),
                           constraints=constraints,
-                          options={'maxiter': 10000},
+                          options={'maxiter': 100000},
                           )
     
     if result['success']:
@@ -135,14 +139,14 @@ def optimizerbacktest(Y_adjusted, trend_df, daily_returns_log, N_More, Max_weigh
                         next_month  = start_next_month.month
                         next_year   = start_next_month.year
                         start_next_month = pd.to_datetime(datetime(next_year, next_month, 1))
-                        w = pd.DataFrame(data, columns=['VTI', 'BND', 'sharpe'])
+                        w = pd.DataFrame(data, columns=['VTI', 'GOVT', 'sharpe'])
                         w.index = [start_next_month]
                         Y_adjusted = pd.DataFrame()
                         Y_adjusted_next_L = pd.DataFrame()
                         Y_adjusted['VTI'] = yf.download("VTI", start=start_cur, end=end_cur)['Adj Close'].pct_change()
-                        Y_adjusted['BND'] = yf.download("BND", start=start_cur, end=end_cur)['Adj Close'].pct_change()
+                        Y_adjusted['GOVT'] = yf.download("GOVT", start=start_cur, end=end_cur)['Adj Close'].pct_change()
                         Y_adjusted_next_L["VTI"] = yf.download("VTI", start=start_next_month, end=end_next)['Adj Close'].pct_change().dropna()#* 0.6
-                        Y_adjusted_next_L['BND'] = yf.download("BND", start=start_next_month, end=end_next)['Adj Close'].pct_change().dropna()#* 0.4
+                        Y_adjusted_next_L['GOVT'] = yf.download("GOVT", start=start_next_month, end=end_next)['Adj Close'].pct_change().dropna()#* 0.4
                         weight_concat = pd.concat([weight_concat, w]).fillna(0)
                         opt_sharpe = (daily_returns.mean() - 0.04) / daily_returns.std()
                         sharpe_array = w
