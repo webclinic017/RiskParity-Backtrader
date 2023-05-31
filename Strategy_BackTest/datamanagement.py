@@ -20,7 +20,7 @@ def data_management(start, end, int):
     asset_classes = asset_classes.sort_values(by=['Asset'])
     asset = assets['Asset'].values.tolist()
     asset = list(set(asset))
-
+    print(assets)
     asset = [x for x in asset if str(x) != 'nan']
 
     df_list = []

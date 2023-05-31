@@ -36,7 +36,7 @@ max_ind_weights = {
     "Commodities": 0.5,
     "Defense": 0.5,
     "Energies": 0.2,
-    "Equities": 0.7,
+    "Equities": 1,
     "Housing": 0.5,
     "Metals": 0.5
 }
