@@ -52,6 +52,7 @@ def optimize_sharpe_ratio(Y_adjusted, mean_returns, cov_matrix, mweight, asset_c
         existing_assets = [asset for asset in assets_in_industry if asset in Y_adjusted.columns]
 
         if len(existing_assets) > 0:
+            print(existing_assets)
             asset_indices = [Y_adjusted.columns.get_loc(asset) for asset in existing_assets]
             constraint = {
                 'type': 'ineq',
