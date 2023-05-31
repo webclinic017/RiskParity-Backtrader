@@ -35,4 +35,5 @@ def data_management(start, end, int):
     asset_classes = asset_classes[valid_assets]
     asset_classes = pd.DataFrame(asset_classes)
     asset_classes = asset_classes.sort_values(by=['Asset'])
+    returns = returns.sort_index(axis=1)
     return returns, asset_classes, asset, assets

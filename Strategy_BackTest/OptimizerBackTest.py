@@ -45,14 +45,12 @@ def optimize_sharpe_ratio(Y_adjusted, mean_returns, cov_matrix, mweight, asset_c
                     {'type': 'ineq', 'fun': lambda x, max_value=0.6: max_value - np.max(x)}, # max value for a variable > than max_value
                     {'type': 'ineq', 'fun': lambda x, nmore=1: (nmore - np.count_nonzero(x == 0))}, # The n > 0 must be at least nmore
     ]
-    print(Y_adjusted)
-
     # I could add some constraints about how much of each asset class so x -
     for industry in asset_constraints['Industry'].unique():
         assets_in_industry = asset_constraints[asset_constraints['Industry'] == industry]['Asset']
         max_weight = asset_constraints[asset_constraints['Industry'] == industry]['Max_Weight'].iloc[0]
-        
         existing_assets = [asset for asset in assets_in_industry if asset in Y_adjusted.columns]
+
         if len(existing_assets) > 0:
             asset_indices = [Y_adjusted.columns.get_loc(asset) for asset in existing_assets]
             constraint = {

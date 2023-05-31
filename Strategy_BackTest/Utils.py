@@ -4,8 +4,8 @@ import pandas as pd
 from datetime import date
 import numpy as np
 import yfinance as yf
-Start = '2010-01-01'
-End = date.today().strftime("%Y-%m-%d")
+Start = '2008-01-01'
+End = '2021-02-01' #date.today().strftime("%Y-%m-%d")
 
 date1 = datetime.strptime(Start, "%Y-%m-%d")
 date2 = datetime.strptime(End, "%Y-%m-%d")

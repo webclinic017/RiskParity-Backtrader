@@ -13,7 +13,7 @@ monthly_returns_log = ret(monthly_returns)
 daily_returns_log   = ret(daily_returns)
 mweight  = 0
 nmore    = 0.2
-
+print(daily_returns_log)
 assets        = assets.sort_values(by=['Industry', 'Asset'], key=lambda x: x.str.lower())
 assets        = assets.reset_index(drop=True)
 df_2 = pd.DataFrame(columns = assets['Asset'].to_list())
@@ -32,13 +32,13 @@ metals      = asset_pick.index("Metals")
 
 # I think this needs to be dynamicly adjusted.
 max_ind_weights = {
-    "Bonds": 0.6,
-    "Commodities": 1,
-    "Defense": 1,
-    "Energies": 0.8,
-    "Equities": 1,
-    "Housing": 1,
-    "Metals": 0.8
+    "Bonds": 0.5,
+    "Commodities": 0.5,
+    "Defense": 0.5,
+    "Energies": 0.2,
+    "Equities": 0.7,
+    "Housing": 0.5,
+    "Metals": 0.5
 }
 
 
@@ -46,7 +46,6 @@ assets['Max_Weight'] = assets['Industry'].map(max_ind_weights)
 
 asset_constraint = assets.copy()
 
-print(daily_returns_log['SPY'].to_string())
 portfolio_return_concat, weight_concat, sharpe_array_concat = optimizerbacktest(daily_returns_log, dummy_L_df, daily_returns_log, nmore, mweight, monthly_returns_log, asset_constraint)
 weight_concat = weight_concat.sort_index(axis=1)
 weight_concat = weight_concat.reindex(columns=df_2.columns)
